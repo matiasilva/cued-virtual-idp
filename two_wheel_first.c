@@ -21,13 +21,15 @@
 #define SENSORS_N 2
 #define WHEELS_N 2
 // distance between the centre of the robot and the front distance centre:
-#define LFRONT 0.05
+#define LFRONT 0.1
 // distance between the centre of the robot and the rear distance centre:
-#define LREAR 0.15
+#define LREAR 0.1
 // half the side length of the areana:
 #define SIDE_HLENGTH 1.19
 // for helping it when the distance sensor is approximately orthogonal to the wall:
-#define TOLERANCE 0.03
+#define TOLERANCE 0.01
+// tolerance for blocks/other robot in the way
+#define ANGLE_TOLERANCE 0.2
 
 // apologies for the fact that I am really used to C++ and haven't programmed in just C for ages, I'm sure there are better ways to organise my variables, but C structs are the closest thing I know of to C++ structs/classes
 
@@ -56,6 +58,11 @@ char dsNames[SENSORS_N][10] = {"ds_front", "ds_rear"};
 char wlNames[WHEELS_N][10] = {"wheel1", "wheel2"};
 
 float destination[3] = {0, 0, 0}; // unimportant
+
+// converts to degrees and rounds to nearest integer
+int RD(double angle){
+  return round(angle * 360.0f / 2 / PI);
+}
 
 // basically '%', but works on doubles, and makes the value between Pi and -PI, (Plus Pi and Minus Pi)
 double MakePPMP(double angle){
@@ -94,6 +101,7 @@ unsigned int FindMin(int n, double *values){
 
 // finds all the points, within the arena, where a circle centre 'centre' and radius 'r' intersects with the four walls of the arena, and stores the bearings of these points from 'centre' in 'angles'; returns the number of points found
 int CircleIntersectArena(vec centre, float r, double *angles){
+  /*printf("CIA: (%f, %f), r=%f\n", centre.x, centre.z, r); // for debugging*/
   int n = 0; // counts the number of intersections found
   float d, root; vec p, a, shortest, offa; // 'a' and 'b' are relative to 'centre'
   for(int i=0; i<4; i++){ // loops through each wall
@@ -103,6 +111,8 @@ int CircleIntersectArena(vec centre, float r, double *angles){
     if(fabs(r - fabs(d)) <= TOLERANCE){ // wall is approximately tangent to circle
       // ...so use the shortest vector:
       angles[n] = CustomATan(shortest.x, shortest.z); // store angle to intersection point
+      /*printf( "Tang intersect %d at: (%f, %f), angle %d\n",
+              i, centre.x+shortest.x, centre.z+shortest.z, RD(angles[n])); // for debugging*/
       n++;
     } else if(fabs(d) < r){ // wall is within circle
       root = sqrt(r*r - d*d); // offset of intersection points from centre, parallel to wall
@@ -110,11 +120,15 @@ int CircleIntersectArena(vec centre, float r, double *angles){
       a = VecAdd(shortest, offa); // one intersection point
       if(WithinArena(VecAdd(centre, a))){ // check it isn't intersecting outside of the arena
         angles[n] = CustomATan(a.x, a.z); // store angle to intersection point
+        /*printf( "Intersect %d at: (%f, %f), angle %d\n",
+                i, centre.x+a.x, centre.z+a.z, RD(angles[n])); // for debugging*/
         n++;
       }
       a = VecSubtract(shortest, offa); // another intersection point
       if(WithinArena(VecAdd(centre, a))){ // check it isn't intersecting outside of the arena
         angles[n] = CustomATan(a.x, a.z); // store angle to intersection point
+        /*printf( "Intersect %d at: (%f, %f), angle %d\n",
+                i, centre.x+a.x, centre.z+a.z, RD(angles[n])); // for debugging*/
         n++;
       }
     } // otherwise, wall is completely outside of circle
@@ -133,7 +147,7 @@ bool FindAngleBestMatch(int nA, double *anglesA, int nB, double *anglesB, double
   }
   unsigned int index = FindMin(nA*nB, delta); // gets index in 'delta' of closest pairing
   double best = delta[index]; // gets closeness of closest pairing
-  if(best < 0.2){ // checks we are close enough for validity (if a block is in the way of one/both of the distance sensors, we would generally expect this to be false)
+  if(best < ANGLE_TOLERANCE){ // checks we are close enough for validity (if a block is in the way of one/both of the distance sensors, we would generally expect this to be false)
     *result = anglesA[index/nB]; // stores the angleA in result
     return true; // success
   }
@@ -142,6 +156,8 @@ bool FindAngleBestMatch(int nA, double *anglesA, int nB, double *anglesB, double
 
 //The arguments of the main function can be specified by the "controllerArgs" field of the Robot node
 int main(int argc, char **argv) {
+  
+  printf("Controller starting.\n");
   
   // setting all the values for the wall lines in vector form
   sides[0] = (line){
@@ -164,6 +180,8 @@ int main(int argc, char **argv) {
   
   wb_robot_init();
   
+  printf("Robot initialised.\n");
+  
   // sensors
   WbDeviceTag distanceSensors[SENSORS_N];
   for(int i=0; i<SENSORS_N; i++){
@@ -184,6 +202,8 @@ int main(int argc, char **argv) {
   
   // Perform simulation steps of TIME_STEP milliseconds and leave the loop when the simulation is over
   while (wb_robot_step(TIME_STEP) != -1) {
+    
+    //printf("C\n");
     
     // reading gps
     double position[3]; // stores the gps reading
