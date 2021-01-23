@@ -88,8 +88,8 @@ double MakePPMP(const double angle){
 
 // modified version of 'atan()' to return values in range -PI to PI, rather than -PI/2 to PI/2
 double CustomATan(const float x, const float z){
-  double ret = atan(z/x);
-  if(x < 0) return MakePPMP(ret + PI);
+  double ret = atan(x/z);
+  if(z < 0) return MakePPMP(ret + PI);
   return ret;
 }
 
@@ -200,21 +200,21 @@ int main(int argc, char **argv) {
   // ----- variables -----
   // setting all the values for the wall lines in vector form
   sides[0] = (line){
-    .point=(vec){.x=SIDE_HLENGTH, .z=-SIDE_HLENGTH},
-    .dirHat=(vec){.x=0, .z=1},
-    .normHat=(vec){.x=-1, .z=0}};
+    .point=(vec){.x=-SIDE_HLENGTH, .z=SIDE_HLENGTH},
+    .dirHat=(vec){.x=1, .z=0},
+    .normHat=(vec){.x=0, .z=-1}};
   sides[1] = (line){
     .point=(vec){.x=SIDE_HLENGTH, .z=SIDE_HLENGTH},
-    .dirHat=(vec){.x=-1, .z=0},
-    .normHat=(vec){.x=0, .z=-1}};
-  sides[2] = (line){
-    .point=(vec){.x=-SIDE_HLENGTH, .z=SIDE_HLENGTH},
     .dirHat=(vec){.x=0, .z=-1},
-    .normHat=(vec){.x=1, .z=0}};
+    .normHat=(vec){.x=-1, .z=0}};
+  sides[2] = (line){
+    .point=(vec){.x=SIDE_HLENGTH, .z=-SIDE_HLENGTH},
+    .dirHat=(vec){.x=-1, .z=0},
+    .normHat=(vec){.x=0, .z=1}};
   sides[3] = (line){
     .point=(vec){.x=-SIDE_HLENGTH, .z=-SIDE_HLENGTH},
-    .dirHat=(vec){.x=1, .z=0},
-    .normHat=(vec){.x=0, .z=1}};
+    .dirHat=(vec){.x=0, .z=1},
+    .normHat=(vec){.x=1, .z=0}};
   int name;
   double orientation;
   
@@ -241,15 +241,15 @@ int main(int argc, char **argv) {
   // reading gps
   double position[3]; // stores the gps reading
   memcpy(position, wb_gps_get_values(gps), 3*sizeof(double));
-  vec pos = (vec){.x=position[0], .z=-position[2]}; // gets gps reading in 2D vector form
-  if(pos.z > 0){
+  vec pos = (vec){.x=position[0], .z=position[2]}; // gets gps reading in 2D vector form
+  if(pos.z < 0){
     name = 0;
-    orientation = -0.5*PI;
+    orientation = 0;
   } else {
     name = 1;
-    orientation = 0.5*PI;
+    orientation = PI;
   }
-  /*printf("%c: Initial = (%f, %f), %d\n", names[name], pos.x, pos.z, RD(orientation)); // for debugging*/
+  printf("%c: Initial = (%f, %f), %d\n", names[name], pos.x, pos.z, RD(orientation)); // for debugging*/
   
   
   // ----- loop -----
@@ -258,7 +258,7 @@ int main(int argc, char **argv) {
     
     // reading gps
     memcpy(position, wb_gps_get_values(gps), 3*sizeof(double));
-    pos = (vec){.x=position[0], .z=-position[2]}; // gets gps reading in 2D vector form
+    pos = (vec){.x=position[0], .z=position[2]}; // gets gps reading in 2D vector form
     
     // destination
     vec delta = VecSubtract(destination, pos);
