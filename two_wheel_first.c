@@ -30,9 +30,14 @@
 #define TOLERANCE 0.01
 // tolerance for blocks/other robot in the way
 #define ANGLE_TOLERANCE 0.2
+// maximum angular velocity it thinks it will ever reach (rad per sec)
+#define MAX_OMEGA 4
+// convert from difference in wheel speeds to angular velocity
+#define TURN_FACTOR 0.666666667
 
 // apologies for the fact that I am really used to C++ and haven't programmed in just C for ages, I'm sure there are better ways to organise my variables, but C structs are the closest thing I know of to C++ structs/classes
 
+// ----- structs ----- 
 // struct to hold a 2D vector
 typedef struct vec {
   float x, z;
@@ -43,6 +48,7 @@ float VecDot    (vec A, vec B)  { return A.x*B.x + A.z*B.z; }
 vec VecAdd      (vec A, vec B)  { return (vec){.x=A.x+B.x, .z=A.z+B.z}; }
 vec VecSubtract (vec A, vec B)  { return (vec){.x=A.x-B.x, .z=A.z-B.z}; }
 vec VecMultiply (float a, vec A){ return (vec){.x=a*A.x,   .z=a*A.z};   }
+float VecSqMag  (vec A)         { return A.x*A.x + A.z*A.z; }
 
 // struct to hold the 2D vector form of a 2D line
 typedef struct line {
@@ -51,31 +57,37 @@ typedef struct line {
   vec normHat; // a unit vector normal to the line
 } line;
 
+// ----- variables ----- (shared between robots)
+double maxDTheta = MAX_OMEGA*TIME_STEP/1000.0f;
 // stores the vector form of the four walls of the arena (that the distance sensors should sense)
 struct line sides[4];
+char names[2] = {'b', 'r'};
 
 char dsNames[SENSORS_N][10] = {"ds_front", "ds_rear"};
 char wlNames[WHEELS_N][10] = {"wheel1", "wheel2"};
 
-float destination[3] = {0, 0, 0}; // unimportant
+// a point in the world to test the code with
+vec destination = (vec){.x=-0.5, .z=0.25};
 
+// ----- functions -----
 // converts to degrees and rounds to nearest integer
-int RD(double angle){
+int RD(const double angle){
   return round(angle * 360.0f / 2 / PI);
 }
 
 // basically '%', but works on doubles, and makes the value between Pi and -PI, (Plus Pi and Minus Pi)
-double MakePPMP(double angle){
-  int sign = (angle > 0) - (angle < 0);
+double MakePPMP(const double angle){
+  double ret = angle;
+  int sign = (ret > 0) - (ret < 0);
   if(sign == 0) return 0;
-  while(sign*angle > PI){
-    angle -= sign*2*PI;
+  while(sign*ret > PI){
+    ret -= sign*2*PI;
   }
-  return angle;
+  return ret;
 }
 
 // modified version of 'atan()' to return values in range -PI to PI, rather than -PI/2 to PI/2
-double CustomATan(float x, float z){
+double CustomATan(const float x, const float z){
   double ret = atan(z/x);
   if(x < 0) return MakePPMP(ret + PI);
   return ret;
@@ -136,29 +148,56 @@ int CircleIntersectArena(vec centre, float r, double *angles){
   return n;
 }
 
-// finds the pair of angles in 'anglesA' and 'anglesB' that are closest to PI radians apart; stores the angle from 'anglesA' in 'result' and returns success
-bool FindAngleBestMatch(int nA, double *anglesA, int nB, double *anglesB, double *result){
-  if(nA == 0) return false; if(nB == 0) return false;
-  double delta[nA*nB]; // stores 'closeness to PI radians apart' for every possible paining
+// finds the pairs of angles in 'anglesA' and 'anglesB' that are close to PI radians apart; stores the angles from 'anglesA' in 'result' and returns number of results
+int FindAnglesMatch(int nA, double *anglesA, int nB, double *anglesB, double *results){
+  if(nA == 0) return 0; if(nB == 0) return 0;
+  int n = 0;
+  double delta; // stores 'closeness to PI radians apart'
   for(int a=0; a<nA; a++){ // loops through anglesA
     for(int b=0; b<nB; b++){ // loops through anglesB
-      delta[b + nB*a] = fabs(fabs(anglesA[a] - anglesB[b]) - PI); // stores the 'closeness to PI apart' for this pairing
+      delta = fabs(fabs(anglesA[a] - anglesB[b]) - PI); // finds the 'closeness to PI apart' for this pairing
+      if(delta < ANGLE_TOLERANCE){
+        results[n] = (anglesA[a] + MakePPMP(anglesB[b] - PI))/2;
+        n++;
+      }
     }
   }
-  unsigned int index = FindMin(nA*nB, delta); // gets index in 'delta' of closest pairing
-  double best = delta[index]; // gets closeness of closest pairing
-  if(best < ANGLE_TOLERANCE){ // checks we are close enough for validity (if a block is in the way of one/both of the distance sensors, we would generally expect this to be false)
-    *result = anglesA[index/nB]; // stores the angleA in result
-    return true; // success
-  }
-  return false; // failure
+  return n;
 }
 
+// takes an array 'angles' of length 'N' of suggestions for what to change '*orientation' to, and makes the change to the closest one, if at least one is valid
+void MoveOrientation(double *orientation, unsigned int N, double *angles, int name){ // 'name' field is for debugging
+  /*printf("%c: o = %d\n", names[name], RD(*orientation)); // for debugging*/
+  double dThetas[N]; // stores the differences for all the angles
+  unsigned int indexes[N]; // stores the index of the corresponding angle in the 'angles' array for the dThetas in the 'dThetas' array
+  int n = 0; double dTheta;
+  for(int i=0; i<N; i++){
+    dTheta = fabs(MakePPMP(angles[i] - *orientation)); // finds the difference for this angle
+    /*printf("%c: ~ to %d ~: dTheta = %f (max %f)\n", names[name], RD(angles[i]), dTheta, maxDTheta); // for debugging*/
+    if(dTheta < maxDTheta){ // if difference is valid (small enough that it doesn't imply a silly large omega)
+      dThetas[n] = dTheta; // store this difference
+      indexes[n] = i; // store its angle index
+      n++;
+    }
+  }
+  if(!n) return; // return if none are valid
+  unsigned int index = FindMin(n, dThetas); // find index of most likely proposed new angle
+  double new = angles[indexes[index]]; // gets this new angle
+  /*printf("%c: Orientation from %d to %d\n", names[name], RD(*orientation), RD(new)); // for debugging*/
+  *orientation = new; // makes the change
+}
+
+// ----- main -----
 //The arguments of the main function can be specified by the "controllerArgs" field of the Robot node
 int main(int argc, char **argv) {
+  wb_robot_init();
+  
+  printf("Robot initialised.\n");
+  
   
   printf("Controller starting.\n");
   
+  // ----- variables -----
   // setting all the values for the wall lines in vector form
   sides[0] = (line){
     .point=(vec){.x=SIDE_HLENGTH, .z=-SIDE_HLENGTH},
@@ -176,11 +215,8 @@ int main(int argc, char **argv) {
     .point=(vec){.x=-SIDE_HLENGTH, .z=-SIDE_HLENGTH},
     .dirHat=(vec){.x=1, .z=0},
     .normHat=(vec){.x=0, .z=1}};
-  
-  
-  wb_robot_init();
-  
-  printf("Robot initialised.\n");
+  int name;
+  double orientation;
   
   // sensors
   WbDeviceTag distanceSensors[SENSORS_N];
@@ -200,24 +236,36 @@ int main(int argc, char **argv) {
   WbDeviceTag gps = wb_robot_get_device("gps");
   wb_gps_enable(gps, TIME_STEP);
   
+  wb_robot_step(TIME_STEP);
+  
+  // reading gps
+  double position[3]; // stores the gps reading
+  memcpy(position, wb_gps_get_values(gps), 3*sizeof(double));
+  vec pos = (vec){.x=position[0], .z=-position[2]}; // gets gps reading in 2D vector form
+  if(pos.z > 0){
+    name = 0;
+    orientation = -0.5*PI;
+  } else {
+    name = 1;
+    orientation = 0.5*PI;
+  }
+  /*printf("%c: Initial = (%f, %f), %d\n", names[name], pos.x, pos.z, RD(orientation)); // for debugging*/
+  
+  
+  // ----- loop -----
   // Perform simulation steps of TIME_STEP milliseconds and leave the loop when the simulation is over
   while (wb_robot_step(TIME_STEP) != -1) {
     
-    //printf("C\n");
-    
     // reading gps
-    double position[3]; // stores the gps reading
     memcpy(position, wb_gps_get_values(gps), 3*sizeof(double));
+    pos = (vec){.x=position[0], .z=-position[2]}; // gets gps reading in 2D vector form
     
-    // ,,,,,,,, unimportant
     // destination
-    float deltaX = destination[0] - position[0];
-    float deltaZ = destination[2] - position[2];
+    vec delta = VecSubtract(destination, pos);
     // distance from destination
-    float sqDistance = deltaX*deltaX + deltaZ*deltaZ;
+    float sqDistance = VecSqMag(delta);
     // angle to destination
-    double targetAngle = CustomATan(deltaX, deltaZ);
-    // ```````
+    double targetAngle = CustomATan(delta.x, delta.z);
     
     // sensing
     double distances[SENSORS_N];
@@ -225,33 +273,35 @@ int main(int argc, char **argv) {
       distances[i] = wb_distance_sensor_get_value(distanceSensors[i]);
     }
     
-    // calculating stuff
-    float leftSpeed;
-    float rightSpeed;
-    
-    vec pos = (vec){.x=position[0], .z=-position[2]}; // gets gps reading in 2D vector form
     float rFront = distances[0] + LFRONT; // radius of circle projected for front sensor
     float rRear = distances[1] + LREAR; // radius of circle projected for rear sensor
     double anglesFront[8]; double anglesRear[8]; // store the possible bearings each sensor could be at
     int nFront = CircleIntersectArena(pos, rFront, anglesFront); // finds these possible bearings
     int nRear = CircleIntersectArena(pos, rRear, anglesRear); // finds these possible bearings
-    double orientation; // unimportant for now
-    if(FindAngleBestMatch(nFront, anglesFront, nRear, anglesRear, &orientation)){ // finds if our readings are consistent (probably no blocks in the way)
-      // ,,,,,,,, unimportant
-      double deltaTheta = MakePPMP(targetAngle - orientation);
-      int sodt = (deltaTheta > 0) - (deltaTheta < 0);
-      // ````````
-      leftSpeed = -0.4;
-      rightSpeed = 0.4;
-    } else { // readings aren't consistent (there are blocks in the way)
-      leftSpeed = 0.4;
-      rightSpeed = -0.4;
+    double angles[8];
+    int anglesN = FindAnglesMatch(nFront, anglesFront, nRear, anglesRear, angles);
+    if(anglesN){
+      MoveOrientation(&orientation, anglesN, angles, name);
+    } else {
+      /*printf("%c: Invalid readings\n", names[name]); // for debugging*/
     }
     
-    // so, in theory, the robots should rotate until one of their sensors is on the edge of a block and it should wiggle, looking at the edge of the block, as this should be where the readings go consistent, inconsistent, consistent etc...
+    // currently, this code just makes the robot turn towards the point 'destination'
+    // it uses a combination of integration of wheel velocity and distance sensor readings to estimate its orientation
+    
+    double deltaTheta = MakePPMP(targetAngle - orientation);
+    int sodt = (deltaTheta > 0) - (deltaTheta < 0);
+    
+    float leftSpeed = -sodt;
+    float rightSpeed = sodt;
     
     wb_motor_set_velocity(wheels[0], leftSpeed);
     wb_motor_set_velocity(wheels[1], rightSpeed);
+    
+    // integrates the wheel velocities to precict the change in orientation
+    orientation -= TURN_FACTOR*leftSpeed*TIME_STEP/2000;
+    orientation += TURN_FACTOR*rightSpeed*TIME_STEP/2000;
+    orientation = MakePPMP(orientation);
   };
   
   // Enter your cleanup code here
