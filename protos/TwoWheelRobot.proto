@@ -139,6 +139,6 @@ Robot {
     density -1
     mass 1
   }
-  controller "two_wheel_first"
+  controller "robot_controller"
 }
 }

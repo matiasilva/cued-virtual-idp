@@ -1,3 +1,6 @@
+#ifndef HEADER
+#define HEADER
+
 #include <string.h>
 #include <math.h>
 #include <stdio.h>
@@ -11,14 +14,10 @@
 #define PI 3.141592654
 #define SENSORS_N 2
 #define WHEELS_N 2
-// half the side length of the areana:
+// half the side length of the arena:
 #define SIDE_HLENGTH 1.19
-// for helping it when the distance sensor is approximately orthogonal to the wall:
+// for helping it calibrate when pointing towards a wall:
 #define TOLERANCE 0.07
-// tolerance for blocks/other robot in the way
-#define ANGLE_TOLERANCE 0.2
-// maximum angular velocity it thinks it will ever reach (rad per sec)
-#define MAX_OMEGA 4
 // convert from difference in wheel speeds to angular velocity
 #define TURN_FACTOR 0.666666667
 // the largest possible horizontal width of a block
@@ -27,55 +26,36 @@
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
 
-// ----- Basic mathematical functions -----
+// ----- Basic mathematical functions (defined in other.cpp) -----
 // converts to degrees and rounds to nearest integer
-int RD(const double angle){
-  return round(angle * 360.0f / 2 / PI);
-}
+int RD(const double angle);
 
 // basically '%', but works on doubles, and makes the value between Pi and -PI, (Plus Pi and Minus Pi)
-double MakePPMP(const double angle){
-  double ret = angle;
-  int sign = (ret > 0) - (ret < 0);
-  if(sign == 0) return 0;
-  while(sign*ret > PI){
-    ret -= sign*2*PI;
-  }
-  return ret;
-}
+double MakePPMP(const double angle);
 
 // returns the index of the smallest value in the array 'values' of length 'n'
-unsigned int FindMin(int n, double *values){
-  double min = values[0];
-  unsigned int ret = 0;
-  for(unsigned int i=1; i<n; i++){
-    if(values[i] < min){
-      min = values[i];
-      ret = i;
-    }
-  }
-  return ret;
-}
+unsigned int FindMin(int n, double *values);
 
+// ----- Data structures -----
 // struct to hold a 2D vector
 struct vec {
-  float z, x;
-  friend float operator*(vec vec1, const vec vec2){
+  float z, x; // z is east, x is north, so coordinates are defined as (z, x), not (x, y)
+  friend float operator*(vec vec1, const vec vec2){ // vector dot product
     return vec1.z*vec2.z + vec1.x*vec2.x;
   }
-  friend vec operator*(vec vec1, const float f){
+  friend vec operator*(vec vec1, const float f){ // multiplication by scalar
     return {vec1.z*f, vec1.x*f};
   }
-  friend vec operator*(const float f, vec vec1){
+  friend vec operator*(const float f, vec vec1){ // multiplication by scalar
     return {vec1.z*f, vec1.x*f};
   }
-  friend vec operator+(vec vec1, const vec vec2){
+  friend vec operator+(vec vec1, const vec vec2){ // vector addition
     return {vec1.z+vec2.z, vec1.x+vec2.x};
   }
-  friend vec operator-(vec vec1, const vec vec2){
+  friend vec operator-(vec vec1, const vec vec2){ // vector subtraction
     return {vec1.z-vec2.z, vec1.x-vec2.x};
   }
-  double Bearing(bool reversed=false){
+  double Bearing(bool reversed=false){ // returns bearing of vector measured anti-clockwise from east (+ve z)
     if(x == 0){
       if(z == 0) printf("Warning: bearing of zero vector taken.\n");
       return PI*(z < 0);
@@ -87,7 +67,19 @@ struct vec {
     if(z < 0) ret += PI;
     return MakePPMP(ret);
   }
-  float SqMag(){
+  float SqMag(){ // square magnitude of vector
     return z*z + x*x;
   }
 };
+
+// type of blocks stored in data base
+enum Colour{dunno, blue, red, question};
+// dunno:		pretty sure there's a block here, dont know the colour
+// blue:		pretty sure there's a blue block here
+// red:			pretty sure there's a red block here
+// question:	there may be a block here
+
+class Navigation; // deals with input and output
+class DataBase; // deals with arena information
+
+#endif

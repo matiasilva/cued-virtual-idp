@@ -1,0 +1,11 @@
+All .cpp and .h files that need to be included must be added to the Makefile
+
+Everything is declared in header.h, except stuff within classes
+
+Basic maths functions are defined in other.cpp
+
+For classes, declare everything in their header. Define small things in their header and large things in their .cpp
+
+Known potential issues with code:
+	database.h, line 99
+	navigation.h, line 22

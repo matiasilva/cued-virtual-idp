@@ -4,46 +4,8 @@
 // Author: Edmund Prager, Richard Monteiro
 // Modifications: None
 
-// You may need to add webots include files such as
-// <webots/DistanceSensor.hpp>, <webots/Motor.hpp>, etc.
-// and/or to add some other includes
-#include <webots/Robot.hpp>
+#include "database.h"
 
-// All the webots classes are defined in the "webots" namespace
-using namespace webots;
-
-bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigned short *retInd){
-    //Debug();
-    Colour colour = (iamred ? red : blue);
-    if(colourNs[colour]){
-      double sqdists[colourNs[colour]];
-      for(int i=0; i<colourNs[colour]; i++){
-        sqdists[i] = (blocks[colour][i] - position).SqMag();
-      }
-      unsigned short index = FindMin(colourNs[colour], sqdists);
-      *retCol = colour;
-      *retInd = index;
-      return true;
-    } else if(colourNs[dunno]){
-      double sqdists[colourNs[dunno]];
-      for(int i=0; i<colourNs[dunno]; i++){
-        sqdists[i] = (blocks[dunno][i] - position).SqMag();
-      }
-      unsigned short index = FindMin(colourNs[dunno], sqdists);
-      *retCol = dunno;
-      *retInd = index;
-      return true;
-    } else {
-      return false;
-    }
-  }
-  bool GetBlock(Colour colour, unsigned short index, vec *ret){
-    if(index >= colourNs[colour]) return false;
-    *ret = blocks[colour][index];
-    return true;
-  }
-
-// Compares a distance sensor reading with the database, and stores the new information. Return agreement
 bool DataBase::LogReading(vec position, double *bearing, float distance, bool canConfirm){
     vec delta = {(float)(distance * cos(*bearing)), (float)(distance * sin(*bearing))};
     vec location = position + delta;
@@ -74,7 +36,7 @@ bool DataBase::LogReading(vec position, double *bearing, float distance, bool ca
       Colour cs[12]; unsigned short bs[12];
       unsigned short nearN = 0;
       float sqDist;
-      for(int c=0; c<3; c++){
+      for(int c=0; c<3; c++){ // only checks dunnos, reds and blues (not questions)
         for(int b=0; b<colourNs[c]; b++){
           sqDist = (location - blocks[c][b]).SqMag();
           if(sqDist < BLOCK_WMAX*BLOCK_WMAX){ // reading is near a known block
@@ -90,11 +52,11 @@ bool DataBase::LogReading(vec position, double *bearing, float distance, bool ca
         return true; // tell robot that we agree with its reading
       } else { // is not near a known block
         // a pre-existing question is being seen?
-        double near[12]; unsigned short qs[12];
+        double near[colourNs[question]]; unsigned short qs[colourNs[question]];
         unsigned short nearN = 0;
         float sqDist;
-        for(int q=0; q<questionsN; q++){
-          sqDist = (location - questions[q]).SqMag();
+        for(int q=0; q<colourNs[question]; q++){
+          sqDist = (location - blocks[question][q]).SqMag();
           if(sqDist < BLOCK_WMAX*BLOCK_WMAX){ // reading is near a pre-existing question
             if(!canConfirm) return true; // can't confirm its a block, but have logged this question already
             qs[nearN] = q;
@@ -104,8 +66,8 @@ bool DataBase::LogReading(vec position, double *bearing, float distance, bool ca
         if(nearN){ // not near a wall or a known block, but near a pre-existing question
           if(!canConfirm) return true; // can't confirm its a block, but have logged this question already
           unsigned short index = FindMin(nearN, near); // find pre-existing question closest to
-          AddDunnoBlock(questions[qs[index]]); // turn question into
-          printf("Question confirmed at %f, %f : from %f, %f on bear %d\n", questions[qs[index]].z, questions[qs[index]].x, position.z, position.x, RD(*bearing));
+          AddDunnoBlock(blocks[question][qs[index]]); // turn question into
+          printf("Question confirmed at %f, %f : from %f, %f on bear %d\n", blocks[question][qs[index]].z, blocks[question][qs[index]].x, position.z, position.x, RD(*bearing));
           RemoveQuestion(qs[index]);             //    a known block
           return true; // tell robot that we agree with its reading
         } else { // not near a wall, known block or pre-existing question
@@ -114,6 +76,39 @@ bool DataBase::LogReading(vec position, double *bearing, float distance, bool ca
         }
       }
     }
-    
-    
+}
+
+bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigned short *retInd){
+    //Debug();
+    Colour colour = (iamred ? red : blue);
+    if(colourNs[colour]){
+      double sqdists[colourNs[colour]];
+      for(int i=0; i<colourNs[colour]; i++){
+        sqdists[i] = (blocks[colour][i] - position).SqMag();
+      }
+      unsigned short index = FindMin(colourNs[colour], sqdists);
+      *retCol = colour;
+      *retInd = index;
+      return true;
+    } else if(colourNs[dunno]){
+      double sqdists[colourNs[dunno]];
+      for(int i=0; i<colourNs[dunno]; i++){
+        sqdists[i] = (blocks[dunno][i] - position).SqMag();
+      }
+      unsigned short index = FindMin(colourNs[dunno], sqdists);
+      *retCol = dunno;
+      *retInd = index;
+      return true;
+    } else if(colourNs[question]){
+      double sqdists[colourNs[question]];
+      for(int i=0; i<colourNs[question]; i++){
+        sqdists[i] = (blocks[question][i] - position).SqMag();
+      }
+      unsigned short index = FindMin(colourNs[question], sqdists);
+      *retCol = question;
+      *retInd = index;
+      return true;
+    } else {
+      return false;
+    }
 }

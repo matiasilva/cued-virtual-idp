@@ -39,15 +39,15 @@
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:
-### CXX_SOURCES = my_plugin.cc my_clever_algo.cpp my_graphics.c++
+CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp
 ###
 ### ---- Compilation options ----
 ### if special compilation flags are necessary:
-### CFLAGS = -Wno-unused-result
+CFLAGS = -std=c++11 -Wno-gnu-static-float-init -Wno-c++11-extensions -Wno-c++11-long-long
 ###
 ### ---- Linked libraries ----
 ### if your program needs additional libraries:
-### INCLUDE = -I"/my_library_path/include"
+INCLUDE = -I"header.h database.h navigation.h"
 ### LIBRARIES = -L"/path/to/my/library" -lmy_library -lmy_other_library
 ###
 ### ---- Linking options ----
@@ -61,7 +61,7 @@
 ### ---- Debug mode ----
 ### if you want to display the gcc command line for compilation and link, as
 ### well as the rm command details used for cleaning:
-### VERBOSE = 1
+VERBOSE = 1
 ###
 ###-----------------------------------------------------------------------------
 
