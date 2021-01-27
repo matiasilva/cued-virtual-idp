@@ -39,7 +39,7 @@
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:
-CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp
+CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp state.cpp
 ###
 ### ---- Compilation options ----
 ### if special compilation flags are necessary:
@@ -47,7 +47,7 @@ CFLAGS = -std=c++11 -Wno-gnu-static-float-init -Wno-c++11-extensions -Wno-c++11-
 ###
 ### ---- Linked libraries ----
 ### if your program needs additional libraries:
-INCLUDE = -I"header.h database.h navigation.h"
+INCLUDE = -I"header.h database.h navigation.h state.h"
 ### LIBRARIES = -L"/path/to/my/library" -lmy_library -lmy_other_library
 ###
 ### ---- Linking options ----

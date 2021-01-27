@@ -7,16 +7,13 @@
 #include "header.h"
 #include "database.h"
 #include "navigation.h"
-
-// ----- variables ----- (shared between robots)
-int timeStep;
-
+	
 // The arguments of the main function can be specified by the "controllerArgs" field of the Robot node
 int main(int argc, char **argv){
 
   Robot *robot = new Robot();
   
-  timeStep = (int)robot->getBasicTimeStep();
+  int timeStep = (int)robot->getBasicTimeStep();
   
   // ----- variables -----
   // stores and deals with the controllers knowledge of the arena
@@ -29,7 +26,7 @@ int main(int argc, char **argv){
   while(robot->step(timeStep) != -1){
     
     // runs the navigation code
-    navigation->BeginStep();
+    navigation->Run();
     
   }
 

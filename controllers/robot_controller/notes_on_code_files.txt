@@ -9,3 +9,8 @@ For classes, declare everything in their header. Define small things in their he
 Known potential issues with code:
 	database.h, line 99
 	navigation.h, line 22
+
+Always put a '\n' at the end of any string passed to 'printf()', as it seems that these strings are only written to the webots console every time a '\n' is printed.
+		(calling just 'printf("foo")' will appear to do nothing;
+		 calling 'printf("foo")' then later calling 'printf("bar\n")' will print "foobar\n" to the
+		 console AT THE TIME YOU CALL 'printf("bar\n")')

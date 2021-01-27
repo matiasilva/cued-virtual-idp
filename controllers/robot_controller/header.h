@@ -79,7 +79,15 @@ enum Colour{dunno, blue, red, question};
 // red:			pretty sure there's a red block here
 // question:	there may be a block here
 
+// classes
 class Navigation; // deals with input and output
 class DataBase; // deals with arena information
+
+// state stuff
+class StateManager;
+class State;
+// states:
+class DefaultState;
+class WaitState;
 
 #endif
