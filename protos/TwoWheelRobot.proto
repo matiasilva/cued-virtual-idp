@@ -128,6 +128,26 @@ Robot {
       ]
       name "ds_rear"
     }
+    DEF CS_COLOUR Camera {
+      translation 0 -0.01 0.1
+      rotation 0 1 0 3.1415
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "cs_colour"
+      width 1
+      height 1
+      far 0.1
+    }
     DEF GPS_ GPS {
       translation 0 0 0
       rotation 0 0 0 0
