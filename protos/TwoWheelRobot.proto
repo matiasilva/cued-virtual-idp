@@ -2,6 +2,7 @@ PROTO TwoWheelRobot [
   field SFVec3f    translation  0 0 0
   field SFRotation rotation     0 1 0 0
   field SFColor    colour 1 0 0
+  field SFString   name "robot"
 ]
 {
 Robot {
@@ -153,12 +154,61 @@ Robot {
       rotation 0 0 0 0
       name "gps"
     }
+    DEF COMPASS Compass {
+      translation 0 0.025 0
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 0 0
+            roughness 1
+            metalness 0
+          }
+          geometry Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "compass"
+    }
+    DEF EMITTER Emitter {
+      translation -0.04 0.025 0.09
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 1 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      channel 1
+    }
+    DEF RECEIVER Receiver {
+      translation 0.04 0.025 0.09
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 1 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      channel 1
+    }
   ]
   boundingObject USE BODY
   physics Physics {
     density -1
     mass 1
   }
+  name IS name
   controller "robot_controller"
 }
 }

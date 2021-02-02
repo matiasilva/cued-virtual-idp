@@ -7,6 +7,7 @@
 #include "header.h"
 #include "database.h"
 #include "navigation.h"
+#include "sensor.h"
 	
 // The arguments of the main function can be specified by the "controllerArgs" field of the Robot node
 int main(int argc, char **argv){
@@ -14,6 +15,7 @@ int main(int argc, char **argv){
   Robot *robot = new Robot();
   
   int timeStep = (int)robot->getBasicTimeStep();
+    
   
   // ----- variables -----
   // stores and deals with the controllers knowledge of the arena
@@ -27,8 +29,8 @@ int main(int argc, char **argv){
     
     // runs the navigation code
     navigation->Run();
-    
-  }
+
+ }
 
   delete robot;
   return 0;

@@ -84,3 +84,106 @@ vec SensorGPS::getCoordinates()
 
 	return coordinates;
 }
+
+// SensorMotor Constructor
+SensorMotor::SensorMotor(Robot* _robot, string name_in_device, string name) : Sensor(_robot, name_in_device)
+{
+	// Initialise actuator with node
+	sensor_name = name;
+	velocity = 0;
+	is_actuator = true;
+
+	sensor_object = robot->getMotor(device_name);
+	sensor_object->setPosition(INFINITY);
+	sensor_object->setVelocity(velocity);
+}
+
+// SensorMotor method to set the wheel's velocity
+void SensorMotor::setVelocity(double v)
+{
+	velocity = v;
+	sensor_object->setVelocity(velocity);
+}
+
+// SensorCompass Constructor
+SensorCompass::SensorCompass(Robot* _robot, string name_in_device, int time_step, string name) : Sensor(_robot, name_in_device)
+{
+	// Initialise sensor with node
+	sensor_name = name;
+	sensor_object = robot->getCompass(device_name);
+	sensor_object->enable(time_step);
+}
+
+// SensorCompass get orientation of GPS device method
+vec SensorCompass::getOrientation()
+{
+	double values[3];
+	vec orientation;
+
+	memcpy(values, sensor_object->getValues(), 3 * sizeof(double));
+	orientation = { (float)values[0], (float)values[2] };
+
+	return orientation;
+}
+
+// SensorCompass get bearing of robot method (radians)
+double SensorCompass::getBearing()
+{
+	vec orientation = getOrientation();
+	double rad = atan2(orientation.z, orientation.x);
+	if (rad < 0.0) rad = rad + 2 * 3.1415926535;
+	return rad;
+}
+
+// SensorCompass get bearing of robot method (degrees)
+double SensorCompass::getBearingDeg()
+{
+	vec orientation = getOrientation();
+	double rad = atan2(orientation.z, orientation.x);
+	if (rad < 0.0) rad = rad + 2 * PI;
+	return rad / PI * 180.0;
+}
+
+// SensorEmitter Constructor
+SensorEmitter::SensorEmitter(Robot* _robot, string name_in_device, string name) : Sensor(_robot, name_in_device)
+{
+	// Initialise sensor with node
+	sensor_name = name;
+	sensor_object = robot->getEmitter(device_name);
+}
+
+// SensorEmitter send data method
+void SensorEmitter::send(const void* data, int size)
+{
+	sensor_object->send(data, size);
+
+}
+
+// SensorReceiver Constructor
+SensorReceiver::SensorReceiver(Robot* _robot, string name_in_device, int time_step, string name) : Sensor(_robot, name_in_device)
+{
+	// Initialise sensor with node
+	sensor_name = name;
+	sensor_object = robot->getReceiver(device_name);
+	sensor_object->enable(time_step);
+}
+
+// SensorReceiver method for obtaining data from receiver queue
+double * SensorReceiver::getData()
+{
+	int size = sensor_object->getQueueLength();
+
+	if (size == 0) {
+		queue_empty = true;
+		return NULL;
+	}
+	else {
+		static double data[PACKET_LENGTH];
+		memcpy(data, sensor_object->getData(), PACKET_LENGTH * sizeof(double));
+		sensor_object->nextPacket();
+
+		if (size - 1 > 0) queue_empty = false;
+		
+		return data;
+	}
+}

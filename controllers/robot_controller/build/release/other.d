@@ -1,7 +1,7 @@
 build/release/other.o: other.cpp header.h \
-  /Applications/Webots.app/include/controller/cpp/webots/Robot.hpp \
-  /Applications/Webots.app/include/controller/cpp/webots/DistanceSensor.hpp \
-  /Applications/Webots.app/include/controller/cpp/webots/Device.hpp \
-  /Applications/Webots.app/include/controller/cpp/webots/../../c/webots/types.h \
-  /Applications/Webots.app/include/controller/cpp/webots/Motor.hpp \
-  /Applications/Webots.app/include/controller/cpp/webots/GPS.hpp
+ E:\Webots/include/controller/cpp/webots/Robot.hpp \
+ E:\Webots/include/controller/cpp/webots/DistanceSensor.hpp \
+ E:\Webots/include/controller/cpp/webots/Device.hpp \
+ E:/Webots/include/controller/c/webots/types.h \
+ E:\Webots/include/controller/cpp/webots/Motor.hpp \
+ E:\Webots/include/controller/cpp/webots/GPS.hpp

@@ -10,6 +10,10 @@
 #include <webots/DistanceSensor.hpp>
 #include <webots/Motor.hpp>
 #include <webots/GPS.hpp>
+#include <webots/Camera.hpp>
+#include <webots/Compass.hpp>
+#include <webots/Emitter.hpp>
+#include <webots/Receiver.hpp>
 
 #define PI 3.141592654
 #define SENSORS_N 2
@@ -22,6 +26,8 @@
 #define TURN_FACTOR 0.666666667
 // the largest possible horizontal width of a block
 #define BLOCK_WMAX 0.0707107
+// the amount of number transmitted in each packet through robot communication
+#define PACKET_LENGTH 5
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;

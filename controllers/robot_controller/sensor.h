@@ -102,7 +102,7 @@ public:
 
 /**
    SensorGPS class representing a GPS object, derived from Sensor class.
-   SensorColour shares all attributes from Sensor, adding:
+   SensorGPS shares all attributes from Sensor, adding:
     1. sensor_object - Object representing Webots GPS, which is encapsulated by the newly defined SensorGPS object.
 
     Attributes are protected and not private as to allow for easy reference in sensor.cpp.
@@ -129,31 +129,140 @@ public:
 };
 
 /**
-   SensorGPS class representing a GPS object, derived from Sensor class.
-   SensorColour shares all attributes from Sensor, adding:
-    1. sensor_object - Object representing Webots GPS, which is encapsulated by the newly defined SensorGPS object.
+   SensorMotor class representing a RotationalMotor object, derived from Sensor class - although it is an actuator.
+   SensorMotor shares all attributes from Sensor, adding:
+    1. sensor_object - Object representing Webots RotationalMotor, which is encapsulated by the newly defined SensorMotor object.
+    2. velocity - attribute which keeps track of current set velocity of motor.
 
     Attributes are protected and not private as to allow for easy reference in sensor.cpp.
 */
-class Motor : public Sensor
+class SensorMotor : public Sensor
 {
 protected:
-    GPS* sensor_object;
+    Motor* sensor_object;
+    double velocity;
 public:
     /**
-        SensorGPS class constructor
+        SensorMotor class constructor
+        #param: Assigned robot (_robot, type Robot, takes in address), device name (name_in_device, type string) within that robot,
+               display name for sensor (name, type string).
+
+        Method calls parent constructor.
+    */
+    SensorMotor(Robot* _robot, string name_in_device, string name = "Motor");
+
+    /**
+        Intermediary "set" method that changes motor velocity
+        #param: double representing new velocity to set the motor.
+    */
+    void setVelocity(double v);
+};
+
+/**
+   SensorCompass class representing a compass object, derived from Sensor class.
+   SensorCompass shares all attributes from Sensor, adding:
+    1. sensor_object - Object representing Webots Compass, which is encapsulated by the newly defined SensorCompass object.
+
+    Attributes are protected and not private as to allow for easy reference in sensor.cpp.
+*/
+class SensorCompass: public Sensor
+{
+protected:
+    Compass* sensor_object;
+public:
+    /**
+        SensorCompass class constructor
         #param: Assigned robot (_robot, type Robot, takes in address), device name (name_in_device, type string) within that robot,
                 time step used for simulation (time_step, type int), display name for sensor (name, type string).
 
         Method calls parent constructor.
     */
-    SensorGPS(Robot* _robot, string name_in_device, int time_step, string name = "GPS Sensor");
+    SensorCompass(Robot* _robot, string name_in_device, int time_step, string name = "Compass Sensor");
 
     /**
-        Intermediary "get" method which obtains coordinates, as 2D vector (vec object), measured from GPS.
-        #returns: vec object with coordinates of GPS.
+        Intermediary "get" method which obtains orientation, as 2D vector (vec object), measured from compass.
+        #returns: vec object corresponding to world orientation.
     */
-    vec getCoordinates();
+    vec getOrientation();
+
+    /**
+        Intermediary "get" method which obtains bearing (from North - positive x direction), as double, measured from compass.
+        #returns:  double corresponding to world orientation bearing - in radians.
+    */
+    double getBearing();
+
+    /**
+        Intermediary "get" method which obtains bearing (from North - positive x direction), as double, measured from compass.
+        #returns:  double corresponding to world orientation bearing - in degrees.
+    */
+    double getBearingDeg();
 };
 
+/**
+   SensorEmitter class representing an Emitter object, derived from Sensor class.
+   SensorEmitter shares all attributes from Sensor, adding:
+    1. sensor_object - Object representing Webots Emitter, which is encapsulated by the newly defined SensorEmitter object.
+
+    Attributes are protected and not private as to allow for easy reference in sensor.cpp.
+*/
+class SensorEmitter : public Sensor
+{
+protected:
+    Emitter* sensor_object;
+public:
+    /**
+        SensorEmitter class constructor
+        #param: Assigned robot (_robot, type Robot, takes in address), device name (name_in_device, type string) within that robot,
+                display name for sensor (name, type string).
+
+        Method calls parent constructor.
+    */
+    SensorEmitter(Robot* _robot, string name_in_device, string name = "Emitter");
+
+    /**
+        Emitter method that "sends" data inputted.
+        #parameters: data - Holds pointer for data value (which can be of any type), size - size of data to be sent in bytes (set to PACKET_LENGTH as default).
+    */
+    void send(const void *data, int size = PACKET_LENGTH * sizeof(double));
+};
+
+
+/**
+   SensorReceiver class representing a Receiver object, derived from Sensor class.
+   SensorReceiver shares all attributes from Sensor, adding:
+    1. sensor_object - Object representing Webots Emitter, which is encapsulated by the newly defined SensorReceiver object.
+    2. queue_empty - Represents whether reception queue is empty - in case of multiple data waiting to be received.
+
+    Attributes are protected and not private as to allow for easy reference in sensor.cpp.
+*/
+class SensorReceiver : public Sensor
+{
+protected:
+    Receiver* sensor_object;
+    bool queue_empty;
+public:
+    /**
+        SensorReceiver class constructor
+        #param: Assigned robot (_robot, type Robot, takes in address), device name (name_in_device, type string) within that robot,
+                display name for sensor (name, type string), time step used for simulation (time_step, type int)
+
+        **Receiver only allows transfer of data composed of double type arrays.**
+
+        Method calls parent constructor.
+    */
+    SensorReceiver(Robot* _robot, string name_in_device, int time_step, string name = "Receiver");
+
+    /**
+        Receiver getData method that "captures" data emitted by other robot.
+        #returns: data in head of reception queue - data emitted (double type).
+        If reception queue empty, returns NULL.
+    */
+    double * getData();
+
+    /**
+        Receiver getter method
+        #returns: whether or not reception queue is empty | value in queue_empty attribute.
+    */
+    bool getQueueEmpty() { return queue_empty; }
+};
 #endif
