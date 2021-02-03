@@ -114,7 +114,7 @@ vec VecSum(unsigned int n, vec *vectors);
 float LargestDistance(unsigned N, vec *vectors);
 
 // type of blocks stored in data base
-enum Colour{dunno, blue, red};
+enum Colour{dunno, blue, red, question};
 // dunno:		pretty sure there's a block here, dont know the colour
 // blue:		pretty sure there's a blue block here
 // red:			pretty sure there's a red block here
@@ -124,6 +124,12 @@ class Test;
 
 class Navigation; // deals with input and output
 class DataBase; // deals with arena information
+class Scan;
+class Sensor;
+class SensorDistance;
+class SensorColour;
+class SensorGPS;
+class SensorCompass;
 
 // state stuff
 class StateManager;
