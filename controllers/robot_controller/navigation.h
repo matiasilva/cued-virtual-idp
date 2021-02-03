@@ -50,6 +50,8 @@ private:
   DataBase *dataBase;
   int timeStep;
   
+  Key key;
+  
   // other classes we use
   StateManager *stateManager;
   Scan *scan;
@@ -62,7 +64,7 @@ private:
   const char wlNames[WHEELS_N][10] = {"wheel1", "wheel2"};
   Motor *wheels[WHEELS_N];
   
-  // variables
+  // variables we read in
   vec position;
   double bearing;
   double distances[SENSORS_N]; // stores distance sensor readings

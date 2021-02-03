@@ -30,9 +30,11 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     if(position.z < 0){
       iAmRed = false;
       bearing = 0;
+      key = kblue;
     } else {
       iAmRed = true;
       bearing = PI;
+      key = kred;
     }
     printf("%c: Initial = (%f, %f), %d\n", names[iAmRed], position.z, position.x, RD(bearing));
 }
@@ -41,7 +43,7 @@ bool Navigation::DBGetDestination(){
 	return dataBase->GetDestination(iAmRed, position, &destColour, &destIndex);
 }
 bool Navigation::DBLogReading(bool canConfirm){
-	return dataBase->LogReading(position, &bearing, distances[0], canConfirm);
+	return dataBase->LogReading(position, bearing, distances[0], canConfirm, key);
 }
 
 void Navigation::Run(){
