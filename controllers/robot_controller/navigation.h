@@ -9,6 +9,7 @@
 #include "header.h"
 #include "database.h"
 #include "state.h"
+#include "scan.h"
 
 class Navigation {
 public:
@@ -49,29 +50,22 @@ private:
   DataBase *dataBase;
   int timeStep;
   
+  // other classes we use
+  StateManager *stateManager;
+  Scan *scan;
+  
   // identification stuff
   bool iAmRed;
   const char names[2] = {'b', 'r'};
-  
-  // gps stuff
-  GPS *gps;
   
   // wheel stuff
   const char wlNames[WHEELS_N][10] = {"wheel1", "wheel2"};
   Motor *wheels[WHEELS_N];
   
-  // distance sensor stuff
-  const char dsNames[SENSORS_N][10] = {"ds_front", "ds_rear"};
-  DistanceSensor *distanceSensors[SENSORS_N];
-  const float dSensorsOff[SENSORS_N] = {0.1, 0.1}; // distances between the centre of the robot and distance sensors
-  double distances[SENSORS_N]; // stores distance sensor readings
-  
-  // state stuff
-  StateManager *stateManager;
-  
   // variables
   vec position;
   double bearing;
+  double distances[SENSORS_N]; // stores distance sensor readings
   
   // destination stuff
   vec destination;
@@ -82,15 +76,11 @@ private:
   }
   
   // gets the gps position and stores it as a vector in the 2D plane
-  void ReadGPS(){
-    double values[3];
-    memcpy(values, gps->getValues(), 3*sizeof(double));
-    position = {(float)values[2], (float)values[0]};
-  }
-  void ReadDistanceSensors(){
-    for(int i=0; i<SENSORS_N; i++){
-      distances[i] = dSensorsOff[i] + distanceSensors[i]->getValue();
-    }
+  void TakeReadings(){
+    position = scan->ReadPosition();
+    bearing = scan->ReadBearing();
+    distances[0] = scan->ReadFrontDistance();
+    distances[1] = scan->ReadRearDistance();
   }
   
 };

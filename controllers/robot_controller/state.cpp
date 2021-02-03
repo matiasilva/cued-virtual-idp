@@ -6,8 +6,18 @@
 
 #include "state.h"
 
+InsertedState::InsertedState(Navigation *_nav, State *_returnTo) : State(_nav){
+	returnTo = _returnTo;
+}
+
+
 DoNothingState::DoNothingState(Navigation *_nav) : TemporaryState(_nav){
 	printf("%c: State changed to 'DoNothingState'\n", nav->GetC());
+	RGB cam = nav->ReadCamera();
+	printf("red = %d, green = %d, blue = %d\n", cam.r, cam.g, cam.b);
+	if(cam.Red()) printf("I think this is red.\n");
+	if(cam.Blue()) printf("I think this is blue.\n");
+	if(!cam.Red() && !cam.Blue()) printf("I think this isn't a block.\n");
 }
 State *DoNothingState::Run(){
 	nav->EndStep(0, 0);
@@ -17,11 +27,8 @@ State *DoNothingState::Run(){
 
 State *DefaultState::Run(){
 	if(!nav->DBGetDestination()){ // no destination to be given
-		if(!nav->DBLogReading(true)){
-			nav->EndStep(0, 0);
-			return new DCheckingState(nav);
-		}
-		nav->EndStep(-1, 1); // rotate slowly to scan for blocks
+		nav->DBLogReading();
+		nav->EndStep(2, -2);
 		return this;
 	}
 	// can have a new destination
@@ -47,7 +54,7 @@ State *WaitState::Run(){
 }
 
 
-DCheckingState::DCheckingState(Navigation *_nav) : State(_nav){
+DCheckingState::DCheckingState(Navigation *_nav, State *_returnTo) : InsertedState(_nav, _returnTo){
 	printf("%c: State changed to 'DCheckingState'\n", nav->GetC());
 	stepsLeft = time*1000/nav->GetTS();
 	startPos = nav->GetPosition();
@@ -56,9 +63,9 @@ State *DCheckingState::Run(){
 	stepsLeft--;
 	if(stepsLeft <= 0){
 		nav->SetBearing((nav->GetPosition() - startPos).Bearing());
-		//printf("%c: Back to default.\n", names[iAmRed]);
+		//printf("%c: Back to previous.\n", names[iAmRed]);
 		nav->EndStep(0, 0);
-		return nullptr;
+		return returnTo;
 	}
 	nav->EndStep(4, 4);
 	return this;
@@ -69,7 +76,7 @@ InitialScanState::InitialScanState(Navigation *_nav) : State(_nav){
 	printf("%c: State changed to 'InitialScanState'\n", nav->GetC());
 }
 State *InitialScanState::Run(){
-	nav->DBLogReading(false);
+	nav->DBLogReading();
 	if(nav->IAmRed()){
 		if(nav->GetBearing() > -1.22 && nav->GetBearing() < 0){
 			//printf("%c: Back to default.\n", names[iAmRed]);
@@ -91,13 +98,14 @@ State *InitialScanState::Run(){
 
 
 MovingToState::MovingToState(Navigation *_nav) : State(_nav){
-	printf("%c: State changed to 'MovingToState'\n", nav->GetC());
+	printf("%c: State changed to 'MovingToState', destination %f, %f\n", nav->GetC(), nav->GetDestination().z, nav->GetDestination().x);
+	counter = stepsPerRead;
 }
 State *MovingToState::Run(){
 	if((nav->PositionInFront() - nav->GetDestination()).SqMag() < 0.0004){
 		nav->EndStep(0, 0);
-		//printf("%c: Found.\n", names[iAmRed]);
-		return new DoNothingState(nav);
+		printf("%c: Found.\n", nav->GetC());
+		return new ColourDeterminingState(nav);
 	}
 	
 	vec delta = nav->GetDestination() - nav->GetPosition();
@@ -110,12 +118,15 @@ State *MovingToState::Run(){
 	
 	float expected = sqrt(delta.SqMag());
 	float off = fabs(expected - nav->GetDistance(0));
-	if(off > 0.05){
+	if(off > 0.07){
+		printf("Lost! exp:%f  dist:%f  off:%f\n", expected, nav->GetDistance(0), off);
 		nav->EndStep(0, 0);
 		return new FindingLostState(nav);
 	} else {
-		nav->DBLogReading(false);
-		nav->SetBearing(targetBearing);
+		if(--counter <= 0){
+			counter = stepsPerRead;
+			nav->DBLogReading();
+		}
 		nav->EndStep(4, 4);
 		return this;
 	}
@@ -125,7 +136,7 @@ State *MovingToState::Run(){
 FindingLostState::FindingLostState(Navigation *_nav) : State(_nav){
 	printf("%c: State changed to 'FindingLostState'\n", nav->GetC());
 	turningRight = false;
-	turnTo = 0.08;
+	turnTo = 0.2;
 }
 State *FindingLostState::Run(){
 	vec delta = nav->GetDestination() - nav->GetPosition();
@@ -133,10 +144,11 @@ State *FindingLostState::Run(){
 	float off = fabs(expected - nav->GetDistance(0));
 	double expectedBearing = delta.Bearing();
 	if(off > 0.05){
+		if(fabs(turnTo) > 1.6) return new DCheckingState(nav, this);
 		if(turningRight){
 			if(MakePPMP(nav->GetBearing() - (expectedBearing - turnTo)) < 0){
 				turningRight = false;
-				turnTo += 0.08;
+				turnTo += 0.3;
 				nav->EndStep(0, 0);
 			} else {
 				nav->EndStep(1, -1);
@@ -155,4 +167,26 @@ State *FindingLostState::Run(){
 		nav->EndStep(0, 0);
 		return new MovingToState(nav);
 	}
+}
+
+ColourDeterminingState::ColourDeterminingState(Navigation *_nav) : State(_nav) {
+	printf("%c: State changed to 'ColourDeterminingState'\n", nav->GetC());
+}
+State *ColourDeterminingState::Run(){
+	RGB cam = nav->ReadCamera();
+	bool blockIsRed;
+	if(cam.Blue()){
+		if(cam.Red()){
+			printf("%c: I think it's both.\n", nav->GetC());
+			return new DoNothingState(nav);
+		}
+		blockIsRed = false;
+	} else if(cam.Red()){
+		blockIsRed = true;
+	} else {
+		printf("%c: I think it's neither.\n", nav->GetC());
+		return new DoNothingState(nav);
+	}
+	nav->DBLogReading(blockIsRed ? red : blue);
+	return nullptr;
 }

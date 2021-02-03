@@ -14,3 +14,5 @@ Always put a '\n' at the end of any string passed to 'printf()', as it seems tha
 		(calling just 'printf("foo")' will appear to do nothing;
 		 calling 'printf("foo")' then later calling 'printf("bar\n")' will print "foobar\n" to the
 		 console AT THE TIME YOU CALL 'printf("bar\n")')
+
+Don't use 'assert' for test code, 'assert(false)' just crashes the controller without any explanation in the Webots console. Instead just use 'printf' or something similar.

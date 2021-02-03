@@ -5,6 +5,7 @@ sceneTreePerspectives: 000000ff0000000100000002000000c00000011201000000020100000
 maximizedDockId: -1
 centralWidgetVisible: 1
 orthographicViewHeight: 1
-textFiles: 2 "../C++/controllers/first_basic/first_basic.cpp" "protos/TwoWheelRobot.proto" "controllers/robot_controller/robot_controller.cpp"
+textFiles: 1 "../C++/controllers/first_basic/first_basic.cpp" "TwoWheelRobot.proto" "controllers/robot_controller/robot_controller.cpp"
+globalOptionalRendering: CameraFrustums
 consoles: Console:All:All
-renderingDevicePerspectives: robot:camera;1;32;0;0
+renderingDevicePerspectives: robot:camera;1;70;0.906856;0

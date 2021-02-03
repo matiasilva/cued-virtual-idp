@@ -7,8 +7,7 @@
 #include "header.h"
 #include "database.h"
 #include "navigation.h"
-#include "sensor.h"
-	
+
 // The arguments of the main function can be specified by the "controllerArgs" field of the Robot node
 int main(int argc, char **argv){
 

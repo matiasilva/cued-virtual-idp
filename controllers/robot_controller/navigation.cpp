@@ -11,27 +11,22 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     dataBase = _dataBase;
     timeStep = _timeStep;
     
+    stateManager = new StateManager(this);
+    stateManager->SetNextState(new InitialScanState(this));
+    
+    scan = new Scan(robot, timeStep);
+    
     // wheels
     for(int i=0; i<WHEELS_N; i++){
       wheels[i] = robot->getMotor(wlNames[i]);
       wheels[i]->setPosition(INFINITY);
     }
     
-    // sensors
-    for(int i=0; i<SENSORS_N; i++){
-      distanceSensors[i] = robot->getDistanceSensor(dsNames[i]);
-      distanceSensors[i]->enable(timeStep);
-    }
-    
-    // gps
-    gps = robot->getGPS("gps");
-    gps->enable(timeStep);
-    
     // starting so we can read already
     robot->step(timeStep);
     
-    // reading gps to figure out which robot this instance of the controller is controlling
-    ReadGPS();
+    // reading position to figure out which robot this instance of the controller is controlling
+    position = scan->ReadPosition();
     if(position.z < 0){
       iAmRed = false;
       bearing = 0;
@@ -40,9 +35,6 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
       bearing = PI;
     }
     printf("%c: Initial = (%f, %f), %d\n", names[iAmRed], position.z, position.x, RD(bearing));
-    
-    stateManager = new StateManager(this);
-    stateManager->SetNextState(new InitialScanState(this));
 }
 
 bool Navigation::DBGetDestination(){
@@ -53,8 +45,8 @@ bool Navigation::DBLogReading(bool canConfirm){
 }
 
 void Navigation::Run(){
-    ReadGPS();
-    ReadDistanceSensors();
+	TakeReadings();
+	
     RetrieveDBDestination();
     
     stateManager->Run();
