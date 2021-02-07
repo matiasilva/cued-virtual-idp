@@ -52,15 +52,6 @@ public:
 	TemporaryState(Navigation *_nav) : State(_nav) {}
 };
 
-// parent class for inserted states (states that return to the previous state on completion)
-class InsertedState : public State {
-public:
-	InsertedState(Navigation *_nav, State *_returnTo);
-	
-protected:
-	State *returnTo;
-};
-
 // special default state - only created once, and is reverted back to when has no other state to go to
 class DefaultState : public TemporaryState {
 public:
@@ -93,9 +84,9 @@ private:
 	int stepsLeft;
 };
 
-class DCheckingState : public InsertedState {
+class DCheckingState : public State {
 public:
-	DCheckingState(Navigation *_nav, State *_returnTo);
+	DCheckingState(Navigation *_nav);
 	
 	State *Run() override;
 	
@@ -117,10 +108,6 @@ public:
 	MovingToState(Navigation *_nav);
 	
 	State *Run() override;
-	
-private:
-	int counter;
-	const int stepsPerRead = 15;
 };
 
 class FindingLostState : public State {
@@ -132,13 +119,6 @@ public:
 private:
 	bool turningRight; // which way are we wiggling
 	double turnTo; // how far out are we wiggling to
-};
-
-class ColourDeterminingState : public State {
-public:
-	ColourDeterminingState(Navigation *_nav);
-	
-	State *Run() override;
 };
 
 
