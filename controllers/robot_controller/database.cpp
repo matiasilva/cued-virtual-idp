@@ -9,7 +9,7 @@
 bool DataBase::LogReading(vec position, double bearing, float distance, bool canConfirm, Key key){
 	vec delta = {(float)(distance * cos(bearing)), (float)(distance * sin(bearing))};
 	vec location = position + delta;
-	
+
 	// we're looking at a wall
 	float tol = TOLERANCE * distance;
 	if(location.z > SIDE_HLENGTH - tol) return true;
@@ -33,7 +33,9 @@ bool DataBase::LogReading(vec position, double bearing, float distance, bool can
 	}
 	if(nearN){ // is near at least one known block
 		unsigned short index = FindMin(nearN, near); // find known block closest to
-		blocks[cs[index]][bs[index]] = {0.5 * (blocks[cs[index]][bs[index]].position + location), key}; // move position of block to average of previous thought position and new reading
+		//blocks[cs[index]][bs[index]] = {0.5 * (blocks[cs[index]][bs[index]].position + location), key}; // move position of block to average of previous thought position and new reading
+		blocks[cs[index]][bs[index]].position = 0.5 * (blocks[cs[index]][bs[index]].position + location);
+		blocks[cs[index]][bs[index]].seenBy = key;
 		printf("Block position updated at %f, %f\n", blocks[cs[index]][bs[index]].position.z, blocks[cs[index]][bs[index]].position.x);
 		return true; // tell robot that we agree with its reading
 	} else { // is not near a known block
@@ -57,7 +59,8 @@ bool DataBase::LogReading(vec position, double bearing, float distance, bool can
 			RemoveQuestion(qs[index]);             //    a known block
 			return true; // tell robot that we agree with its reading
 		} else { // not near a wall, known block or pre-existing question
-			AddQuestion({location, key}); // add in a question
+			unsigned short int primaryKey = GenerateKey(); // generate primary key for question
+			AddQuestion({location, key, primaryKey, 0, question}); // add in a question
 			return false; // tell robot to double check
 		}
 	}
@@ -96,4 +99,11 @@ bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigne
     } else {
       return false;
     }
+}
+
+short unsigned int DataBase::GenerateKey()
+{
+	static unsigned int previous_key = 0; // create static var to store previous key value - such that no primary key is ever repeated
+	previous_key++; // No overflow errors occur until previous_key = 65535 - well beyond the possible keys used in this program.
+	return previous_key;
 }

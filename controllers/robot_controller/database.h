@@ -13,6 +13,9 @@ enum Key {kblue, kred, kboth};
 struct Block {
 	vec position;
 	Key seenBy;
+    short unsigned int primaryKey; // Block primary key (defined on current robot)
+    short unsigned int foreignKey; // Block foreign key (defined on other robot)
+    Colour blockColour; // Known block colour
 };
 
 class DataBase {
@@ -66,11 +69,14 @@ public:
     printf("Reds: %d\n", colourNs[red]);
     printf("Questions: %d\n", colourNs[question]);
   }
+
+  // handles creation of primary keys for blocks - a value of 0 for keys mean a key has not yet been assigned.
+  short unsigned int GenerateKey();
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)
   //			 | this is the index
-  Block blocks[4][64];
+  Block blocks[4][32];
   //         | this is the colour
   unsigned short colourNs[4]; // numbers of blocks stored of each colour
   
@@ -91,7 +97,7 @@ private:
   
   // Adds a new question into the database
   void AddQuestion(Block block){
-    printf("Question added at %f, %f\n", block.position.z, block.position.x);
+    printf("Question added at %f, %f, %u\n", block.position.z, block.position.x, block.primaryKey);
     blocks[question][colourNs[question]++] = block;
   }
   // Removes a question from the database. !!! We currently are not doing anything about robots who have a question as their destination when that question is removed.
