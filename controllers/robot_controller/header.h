@@ -28,6 +28,8 @@
 #define BLOCK_WMAX 0.0707107
 // the amount of number transmitted in each packet through robot communication
 #define PACKET_LENGTH 5
+// the uncertainty in the location of the block - defined experimentally
+#define BLOCK_POS_UNCERTAINTY 1.0
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;

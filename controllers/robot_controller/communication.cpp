@@ -32,9 +32,9 @@ void unpackData(Block* block, double* data) {
 	// Based on packet length
 	block->position.x = *data;
 	block->position.z = *(data + 1);
-	block->blockColour = (colour) *(data + 2);
-	block->primaryKey = (unsigned short int) *(data+3);
-	block->foreignKey = (unsigned short int) * (data + 4);
+	block->blockColour = (Colour) *(data + 2);
+	block->primaryKey = (unsigned short int) *(data+4); // note primary and foreign key swapped here - as reference robot is swapped
+	block->foreignKey = (unsigned short int) * (data + 3);
 }
 
 void sendData(Block* block, SensorEmitter* em) {
@@ -46,4 +46,22 @@ void sendData(Block* block, SensorEmitter* em) {
 	em->send(data);
 }
 
-void receiveData();
+void receiveData(DataBase* database, SensorReceiver* rec) {
+	while (!rec->getQueueEmpty()) {
+		// receive data from queue
+		Block block;
+		unpackData(&block, rec->getData());
+
+		bool keyExists = false;
+		// verify primary key - if it is non-zero
+		if (block.primaryKey != 0) keyExists = database->VerifyPrimaryKey(block.primaryKey);
+
+		if (keyExists) database->ModifyBlockByPrimaryKey(&block);
+		else {
+			int ind = database->FindByPosition(block.position);
+
+			if (ind != -1) database->ModifyBlockByIndex(&block, ind);
+			else database->AddNewBlock(&block);
+		}
+	}
+}

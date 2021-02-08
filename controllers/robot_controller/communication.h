@@ -6,6 +6,7 @@
 #ifndef COMMUNICATION
 #define COMMUNICATION
 
+#include "database.h"
 
 /**
    packData function rearranges data from Block object into array of doubles to be transmitted as packets.
@@ -33,6 +34,6 @@ void sendData(Block* block, SensorEmitter* em);
     as to synchronise data between the databases of both robots.
     
 */
-void receiveData();
+void receiveData(DataBase* database, SensorReceiver* rec);
 
 #endif

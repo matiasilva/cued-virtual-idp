@@ -107,3 +107,83 @@ short unsigned int DataBase::GenerateKey()
 	previous_key++; // No overflow errors occur until previous_key = 65535 - well beyond the possible keys used in this program.
 	return previous_key;
 }
+
+bool DataBase::VerifyPrimaryKey(unsigned short int pkey)
+{
+	bool found = false;
+	for (int i = 0; i < 4 * 32; i++) {
+		if (blocks[(int)i / 32][i % 32].primaryKey == pkey) found = true;
+	}
+	return found;
+}
+
+int DataBase::FindByPrimaryKey(unsigned short int pkey)
+{
+	int index = -1;
+	for (int i = 0; i < 4 * 32; i++) {
+		if (blocks[(int)i / 32][i % 32].primaryKey == pkey) index  = i;
+	}
+	return index;
+}
+
+int DataBase::FindByPosition(vec pos)
+{
+	vec pos_db;
+	for (int i = 0; i < 4 * 32; i++) {
+		Block block_db = blocks[(int)i / 32][i % 32];
+		pos_db = block_db.position;
+		// If both x' and y' (new block) correspond to existing x, y with uncertainty BLOCK_POS_UNCERTAINTY u ( (x - u) < x' < (x + u), (y - u) < y' < (y + u)), blocks are deemed equal.
+		if (pos.x < pos_db.x + BLOCK_POS_UNCERTAINTY && pos.x > pos_db.x - BLOCK_POS_UNCERTAINTY
+			&& pos.z < pos_db.z + BLOCK_POS_UNCERTAINTY && pos.z > pos_db.z - BLOCK_POS_UNCERTAINTY) return i;
+	}
+	return -1;
+
+}
+
+void DataBase::ModifyBlockByPrimaryKey(Block* block, bool forceChange)
+{
+	// find block in database
+    int found_index = FindByPrimaryKey(block->primaryKey);
+	if (found_index == -1) return; // block with primary key not in database
+
+	Block block_db = blocks[(int)found_index / 32][found_index % 32];
+
+	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block.
+	if (forceChange || block_db.blockColour != block->blockColour) {
+		blocks[(int)found_index / 32][found_index % 32] = *block;
+	}
+	
+}
+
+void DataBase::ModifyBlockByIndex(Block* block, int index, bool forceChange)
+{
+
+	Block block_db = blocks[(int)index / 32][index % 32];
+
+	// set foreign key and primary keys to match
+	blocks[(int)index / 32][index % 32].foreignKey = block->foreignKey;
+	block->primaryKey = block_db.primaryKey;
+
+	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block.
+	if (forceChange || block_db.blockColour != block->blockColour) {
+		blocks[(int)index / 32][index % 32] = *block;
+	}
+
+}
+
+void DataBase::AddNewBlock(Block* block)
+{
+	Colour col = block->blockColour;
+	unsigned short int primaryKey = GenerateKey(); // generate primary key for block
+	block->primaryKey = primaryKey;
+
+	if ((col == red || col == blue) && colourNs[col] >= 4)
+	{
+		block->blockColour = question;
+		blocks[question][colourNs[col]] = *block;
+	}
+	else {
+		blocks[col][colourNs[col]] = *block;
+	}
+
+}

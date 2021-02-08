@@ -71,7 +71,38 @@ public:
   }
 
   // handles creation of primary keys for blocks - a value of 0 for keys mean a key has not yet been assigned.
+  // #returns: Unique identifier as short unsigned integer
   short unsigned int GenerateKey();
+
+  // verifies whether given primary key for a block exists in the database
+  // #param: (unsigned short int) pkey, representing primary key in check.
+  // #returns: Boolean indicating whether block with given primary key is in list.
+  bool VerifyPrimaryKey(unsigned short int pkey);
+
+  // finds and returns index of block with given primary key in database
+  // #param: (unsigned short int) pkey, representing primary key in check.
+  // #returns: Index of block with given primary key in database (if it is not found, returns -1).
+  int FindByPrimaryKey(unsigned short int pkey);
+
+  // verifies database for block with matching coordinates - according to a degree of uncertainty.
+  // #param: vec struct pos - position to search against
+  // #returns: index of matching block - if block with matching coordinates is not found, returns -1. 
+  int FindByPosition(vec pos);
+
+  // modifies block in database with equivalent given block (blocks must have the same primary key)
+  // modification does not occur when blocks have the same colour (blockColour) - database does not find such a difference major enough for a change
+  // #param: Pointer to Block type block (struct), Boolean forceChange which forces the block modification, even if block colours are identical.
+  void ModifyBlockByPrimaryKey(Block* block, bool forceChange = false);
+
+  // modifies block in database with equivalent given block (according to position index of block within database)
+  // method always modifies foreign key/ primary keys to match two robots. Complete modification does not occur when blocks have the same colour (blockColour) - database does not find such a difference major enough for a change
+  // #param: Pointer to Block type block (struct), Boolean forceChange which forces complete block modification, even if block colours are identical.
+  //         integer index relating to the position of the block to be modified within the database. This is a direct positional value obtained by transforming the 2D blocks array into 1D.
+  void ModifyBlockByIndex(Block* block, int index, bool forceChange = false);
+
+  // method directly assigns a new block to the database, assigning it to the correct category and generating its primary key
+  // #param: Pointer to block struct to be added to the database.
+  void AddNewBlock(Block* block);
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)
