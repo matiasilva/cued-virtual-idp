@@ -18,8 +18,8 @@ WorldInfo {
   ]
 }
 Viewpoint {
-  orientation 0.00552723631044387 0.9934378682870959 0.1142394481427463 3.4131654120393176
-  position -0.6465723723873107 0.470343681934948 -1.3789593705912722
+  orientation -0.014792547718451938 0.9981759742920631 0.0585312299382813 3.436196218843009
+  position -0.2939280741517678 0.1596495726179587 -0.7549619055863859
 }
 TexturedBackground {
 }
@@ -200,7 +200,7 @@ DEF WALL_4 Solid {
   boundingObject USE WALL_SHAPE
 }
 Robot {
-  translation 0 0.05 0
+  translation 0 0.015 0
   children [
     Solid {
       children [
@@ -219,9 +219,12 @@ Robot {
       boundingObject USE Box-Shape
       physics Physics {
       }
+      recognitionColors [
+        0 0 0
+      ]
     }
     Transform {
-      translation -0.02 0.0285 0.05
+      translation -0.02 0.0356 0.05
       rotation 0 0 1 1.5708
       children [
         HingeJoint {
@@ -252,7 +255,7 @@ Robot {
       ]
     }
     Transform {
-      translation 0.17 0.0285 0.05
+      translation 0.17 0.0356 0.05
       rotation 0 0 1 1.5708
       children [
         HingeJoint {
@@ -293,8 +296,89 @@ Robot {
         }
       ]
     }
+    Transform {
+      translation 0.05 0.0813 -0.072
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            anchor 0 0.025 0.172
+          }
+          device [
+            RotationalMotor {
+            }
+          ]
+          endPoint Solid {
+            rotation 1 0 0 0
+            children [
+              DEF Arm1-Shape Shape {
+                appearance USE Colour
+                geometry Mesh {
+                  url [
+                    "C:/Users/Jacob/Documents/IDP/Webots/Arm1main.STL"
+                  ]
+                }
+              }
+            ]
+            name "solid(5)"
+            boundingObject USE Arm1-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.053 0.05706 -0.07213
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            anchor 0 0.0495 0.025
+          }
+          endPoint Solid {
+            rotation 1 0 0 0
+            children [
+              DEF Arm2-Shape Shape {
+                appearance USE Colour
+                geometry Mesh {
+                  url [
+                    "C:/Users/Jacob/Documents/IDP/Webots/Arm2lower.STL"
+                  ]
+                }
+              }
+            ]
+            name "solid(2)"
+            boundingObject USE Arm2-Shape
+            physics Physics {
+            }
+          }
+        }
+        Transform {
+          translation -0.026 -0.018 -0.005
+          children [
+            Solid {
+              children [
+                DEF Claw1-Shape Shape {
+                  appearance USE Colour
+                  geometry Mesh {
+                    url [
+                      "C:/Users/Jacob/Documents/IDP/Webots/Grabber1upper.STL"
+                    ]
+                  }
+                }
+              ]
+              name "solid(6)"
+              boundingObject USE Claw1-Shape
+              physics Physics {
+              }
+            }
+          ]
+        }
+      ]
+    }
   ]
-  boundingObject USE Box-Shape
   physics Physics {
   }
+  recognitionColors [
+    0 0 0
+  ]
 }
