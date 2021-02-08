@@ -1,0 +1,300 @@
+#VRML_SIM R2021a utf8
+WorldInfo {
+  basicTimeStep 16
+  coordinateSystem "NUE"
+  contactProperties [
+    ContactProperties {
+      material2 "slippy"
+      coulombFriction [
+        0
+      ]
+    }
+    ContactProperties {
+      material2 "block"
+      coulombFriction [
+        0.01
+      ]
+    }
+  ]
+}
+Viewpoint {
+  orientation 0.00552723631044387 0.9934378682870959 0.1142394481427463 3.4131654120393176
+  position -0.6465723723873107 0.470343681934948 -1.3789593705912722
+}
+TexturedBackground {
+}
+TexturedBackgroundLight {
+}
+Floor {
+  size 2.4 2.4
+  appearance Asphalt {
+  }
+}
+DEF Block_R1 Solid {
+  translation 0.377 0.05 -0.9
+  children [
+    DEF BOX_R Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.05 0.05
+      }
+    }
+  ]
+  name "solid(4)"
+  contactMaterial "box"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R2 Solid {
+  translation 1 0.05 0.3
+  children [
+    USE BOX_R
+  ]
+  name "solid(13)"
+  contactMaterial "block"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R3 Solid {
+  translation -1 0.05 -0.5
+  children [
+    USE BOX_R
+  ]
+  name "solid(12)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_R4 Solid {
+  translation 0.1 0.05 1.1
+  children [
+    USE BOX_R
+  ]
+  name "solid(7)"
+  boundingObject USE BOX_R
+  physics Physics {
+  }
+}
+DEF Block_B1 Solid {
+  translation -1.1 0.05 1
+  children [
+    DEF BOX_B Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.05 0.05 0.05
+      }
+    }
+  ]
+  name "solid(8)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B2 Solid {
+  translation -0.122619 0.05 0.684374
+  children [
+    USE BOX_B
+  ]
+  name "solid(9)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B3 Solid {
+  translation -0.85 0.05 -0.2
+  children [
+    USE BOX_B
+  ]
+  name "solid(10)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Block_B4 Solid {
+  translation 1 0.05 0.7
+  children [
+    USE BOX_B
+  ]
+  name "solid(11)"
+  boundingObject USE BOX_B
+  physics Physics {
+  }
+}
+DEF Floor_colour Solid {
+  translation 1 0.0001 1
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 1 0 0
+      }
+      geometry Plane {
+        size 0.4 0.4
+      }
+    }
+  ]
+  name "solid(6)"
+}
+DEF Floor_colour Solid {
+  translation 1 0.0001 -1
+  children [
+    Shape {
+      appearance PBRAppearance {
+        baseColor 0 0 1
+      }
+      geometry Plane {
+        size 0.4 0.4
+      }
+    }
+  ]
+  name "solid(5)"
+}
+DEF WALL_1 Solid {
+  translation 1.2 0.05 0
+  children [
+    DEF WALL_SHAPE Shape {
+      appearance PBRAppearance {
+        baseColor 0.12549 0.368627 0.729412
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.02 0.1 2.38
+      }
+    }
+  ]
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_2 Solid {
+  translation -1.2 0.05 0
+  rotation 0 -0.9999999999999999 0 0
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(1)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_3 Solid {
+  translation 0 0.05 -1.2
+  rotation 0 1 0 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(2)"
+  boundingObject USE WALL_SHAPE
+}
+DEF WALL_4 Solid {
+  translation 0 0.05 1.2
+  rotation 0 1 0 1.5708
+  children [
+    USE WALL_SHAPE
+  ]
+  name "solid(3)"
+  boundingObject USE WALL_SHAPE
+}
+Robot {
+  translation 0 0.05 0
+  children [
+    Solid {
+      children [
+        DEF Box-Shape Shape {
+          appearance DEF Colour PBRAppearance {
+            baseColor 0 1 1
+            metalness 0
+          }
+          geometry Mesh {
+            url [
+              "C:/Users/Jacob/Documents/IDP/Webots/Box_Shape.STL"
+            ]
+          }
+        }
+      ]
+      boundingObject USE Box-Shape
+      physics Physics {
+      }
+    }
+    Transform {
+      translation -0.02 0.0285 0.05
+      rotation 0 0 1 1.5708
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            axis 0 -1 0
+          }
+          device [
+            RotationalMotor {
+            }
+          ]
+          endPoint Solid {
+            rotation 0 -1 0 0
+            children [
+              DEF Wheel-Shape Shape {
+                appearance USE Colour
+                geometry Cylinder {
+                  height 0.022
+                  radius 0.05
+                }
+              }
+            ]
+            name "solid(4)"
+            boundingObject USE Wheel-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.17 0.0285 0.05
+      rotation 0 0 1 1.5708
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            axis 0 1 0
+          }
+          endPoint Solid {
+            children [
+              USE Wheel-Shape
+            ]
+            name "solid(1)"
+            boundingObject USE Wheel-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.064 0 0.175
+      rotation 1 0 0 3.14159
+      children [
+        Solid {
+          children [
+            DEF Bearing-Shape Shape {
+              appearance USE Colour
+              geometry Mesh {
+                url [
+                  "C:/Users/Jacob/Documents/IDP/Webots/Bearing.STL"
+                ]
+              }
+            }
+          ]
+          name "solid(3)"
+          boundingObject USE Bearing-Shape
+          physics Physics {
+          }
+        }
+      ]
+    }
+  ]
+  boundingObject USE Box-Shape
+  physics Physics {
+  }
+}
