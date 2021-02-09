@@ -1,0 +1,237 @@
+PROTO protoName [
+  protoFields 
+]
+{
+   Robot {
+  translation 0 0.015 0
+  children [
+    Solid {
+      children [
+        DEF Box-Shape Shape {
+          appearance DEF Colour PBRAppearance {
+            baseColor 0 1 1
+            metalness 0
+          }
+          geometry Mesh {
+            url [
+              "C:/Users/Jacob/Documents/IDP/Webots/Box_Shape.STL"
+            ]
+          }
+        }
+      ]
+      boundingObject USE Box-Shape
+      physics Physics {
+      }
+      recognitionColors [
+        0 0 0
+      ]
+    }
+    Transform {
+      translation -0.02 0.0356 0.05
+      rotation 0 0 1 1.5708
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            axis 0 -1 0
+          }
+          device [
+            RotationalMotor {
+            }
+          ]
+          endPoint Solid {
+            rotation 0 -1 0 0
+            children [
+              DEF Wheel-Shape Shape {
+                appearance USE Colour
+                geometry Cylinder {
+                  height 0.022
+                  radius 0.05
+                }
+              }
+            ]
+            name "solid(4)"
+            boundingObject USE Wheel-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.17 0.0356 0.05
+      rotation 0 0 1 1.5708
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            axis 0 1 0
+          }
+          endPoint Solid {
+            children [
+              USE Wheel-Shape
+            ]
+            name "solid(1)"
+            boundingObject USE Wheel-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.064 0 0.175
+      rotation 1 0 0 3.14159
+      children [
+        Solid {
+          children [
+            DEF Bearing-Shape Shape {
+              appearance USE Colour
+              geometry Mesh {
+                url [
+                  "C:/Users/Jacob/Documents/IDP/Webots/Bearing.STL"
+                ]
+              }
+            }
+          ]
+          name "solid(3)"
+          boundingObject USE Bearing-Shape
+          physics Physics {
+            density 1000000
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.05 0.0813 -0.072
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            anchor 0 0.025 0.172
+          }
+          device [
+            RotationalMotor {
+            }
+          ]
+          endPoint Solid {
+            rotation 1 0 0 0
+            children [
+              DEF Arm1-Shape Shape {
+                appearance USE Colour
+                geometry Mesh {
+                  url [
+                    "C:/Users/Jacob/Documents/IDP/Webots/Arm1main.STL"
+                  ]
+                }
+              }
+            ]
+            name "solid(5)"
+            boundingObject USE Arm1-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    Transform {
+      translation 0.053 0.05706 -0.07213
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            anchor 0 0.0495 0.025
+          }
+          endPoint Solid {
+            translation -1.843137617529855e-08 -8.933842306470263e-06 -6.158416737931521e-06
+            rotation -0.9594485268236111 -0.245841459926458 -0.13791483225973197 1.1626725913960596e-06
+            children [
+              DEF Arm2-Shape Shape {
+                appearance USE Colour
+                geometry Mesh {
+                  url [
+                    "C:/Users/Jacob/Documents/IDP/Webots/Arm2lower.STL"
+                  ]
+                }
+              }
+              Transform {
+                translation -0.026 -0.018 -0.005
+                children [
+                  Solid {
+                    children [
+                      DEF Claw1-Shape Shape {
+                        appearance USE Colour
+                        geometry Mesh {
+                          url [
+                            "C:/Users/Jacob/Documents/IDP/Webots/Grabber1upper.STL"
+                          ]
+                        }
+                      }
+                    ]
+                    boundingObject USE Claw1-Shape
+                    physics Physics {
+                    }
+                  }
+                ]
+              }
+              SliderJoint {
+                jointParameters JointParameters {
+                  axis 1 0 0
+                }
+                device [
+                  LinearMotor {
+                  }
+                ]
+                endPoint Solid {
+                  translation -0.02 -0.07 0.055
+                  rotation 0 1 0 1.5708
+                  children [
+                    DEF Grabber1-Shape Shape {
+                      appearance USE Colour
+                      geometry Mesh {
+                        url [
+                          "C:/Users/Jacob/Documents/IDP/Webots/Grabber2claw.STL"
+                        ]
+                      }
+                    }
+                  ]
+                  name "solid(1)"
+                  boundingObject USE Grabber1-Shape
+                  physics Physics {
+                  }
+                }
+              }
+              SliderJoint {
+                jointParameters JointParameters {
+                  axis 1 0 0
+                }
+                device [
+                  LinearMotor {
+                  }
+                ]
+                endPoint Solid {
+                  translation 0.0650006961016294 -0.07 0
+                  rotation 0 1 0 -1.5707953071795862
+                  children [
+                    USE Grabber1-Shape
+                  ]
+                  name "solid(2)"
+                  boundingObject USE Grabber1-Shape
+                  physics Physics {
+                  }
+                }
+              }
+            ]
+            name "solid(2)"
+            boundingObject USE Arm2-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+  ]
+  physics Physics {
+  }
+  recognitionColors [
+    0 0 0
+  ]
+}
+
+}
