@@ -1,17 +1,19 @@
 PROTO IDP_Robot [
   field SFVec3f translation 0 0 0
   field SFRotation rotation 0 1 0 0
-  field SFFloat bodyMass 1
+  field SFColor    colour 1 0 0
+  field SFString   name "robot"
 ]
 {
    Robot {
-  translation 0 0.015 0
+  translation IS translation
+  rotation IS rotation
   children [
     Solid {
       children [
         DEF Box-Shape Shape {
           appearance DEF Colour PBRAppearance {
-            baseColor 0 1 1
+            baseColor IS colour
             metalness 0
           }
           geometry Mesh {
@@ -97,7 +99,7 @@ PROTO IDP_Robot [
           name "solid(3)"
           boundingObject USE Bearing-Shape
           physics Physics {
-            density 1000000
+            density 1000
           }
         }
       ]
@@ -231,8 +233,8 @@ PROTO IDP_Robot [
   ]
   physics Physics {
     density -1
-    mass IS bodyMass
   }
+  name IS name
   recognitionColors [
     0 0 0
   ]
