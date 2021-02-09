@@ -16,7 +16,7 @@ PROTO IDP_Robot [
           }
           geometry Mesh {
             url [
-              "C:/Users/Jacob/Documents/IDP/Webots/Box_Shape.STL"
+              "../Webots/Box_Shape.STL"
             ]
           }
         }
@@ -89,7 +89,7 @@ PROTO IDP_Robot [
               appearance USE Colour
               geometry Mesh {
                 url [
-                  "C:/Users/Jacob/Documents/IDP/Webots/Bearing.STL"
+                  "../Webots/Bearing.STL"
                 ]
               }
             }
@@ -120,7 +120,7 @@ PROTO IDP_Robot [
                 appearance USE Colour
                 geometry Mesh {
                   url [
-                    "C:/Users/Jacob/Documents/IDP/Webots/Arm1main.STL"
+                    "../Webots/Arm1main.STL"
                   ]
                 }
               }
@@ -148,7 +148,7 @@ PROTO IDP_Robot [
                 appearance USE Colour
                 geometry Mesh {
                   url [
-                    "C:/Users/Jacob/Documents/IDP/Webots/Arm2lower.STL"
+                    "../Webots/Arm2lower.STL"
                   ]
                 }
               }
@@ -161,7 +161,7 @@ PROTO IDP_Robot [
                         appearance USE Colour
                         geometry Mesh {
                           url [
-                            "C:/Users/Jacob/Documents/IDP/Webots/Grabber1upper.STL"
+                            "../Webots/Grabber1upper.STL"
                           ]
                         }
                       }
@@ -188,7 +188,7 @@ PROTO IDP_Robot [
                       appearance USE Colour
                       geometry Mesh {
                         url [
-                          "C:/Users/Jacob/Documents/IDP/Webots/Grabber2claw.STL"
+                          "../Webots/Grabber2claw.STL"
                         ]
                       }
                     }
