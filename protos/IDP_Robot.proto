@@ -1,15 +1,15 @@
 PROTO IDP_Robot [
-  field SFVec3f translation 0 0 0
+  field SFVec3f translation 0 0.02 0
   field SFRotation rotation 0 1 0 0
   field SFColor    colour 1 0 0
   field SFString   name "robot"
 ]
 {
-   Robot {
+Robot {
   translation IS translation
   rotation IS rotation
   children [
-    Solid {
+  Solid {
       children [
         DEF Box-Shape Shape {
           appearance DEF Colour PBRAppearance {
@@ -40,6 +40,8 @@ PROTO IDP_Robot [
           }
           device [
             RotationalMotor {
+              name "wheel1"
+              maxTorque 100
             }
           ]
           endPoint Solid {
@@ -67,8 +69,14 @@ PROTO IDP_Robot [
       children [
         HingeJoint {
           jointParameters HingeJointParameters {
-            axis 0 1 0
+            axis 0 -1 0
           }
+          device [
+            RotationalMotor {
+              name "wheel2"
+              maxTorque 100
+            }
+          ]
           endPoint Solid {
             children [
               USE Wheel-Shape
@@ -99,7 +107,8 @@ PROTO IDP_Robot [
           name "solid(3)"
           boundingObject USE Bearing-Shape
           physics Physics {
-            density 1000
+            density -1
+            mass 10
           }
         }
       ]
@@ -113,6 +122,8 @@ PROTO IDP_Robot [
           }
           device [
             RotationalMotor {
+              name "arm"
+              maxTorque 100
             }
           ]
           endPoint Solid {
@@ -126,17 +137,9 @@ PROTO IDP_Robot [
                   ]
                 }
               }
-            ]
-            name "solid(5)"
-            boundingObject USE Arm1-Shape
-            physics Physics {
-            }
-          }
-        }
-      ]
-    }
-    Transform {
-      translation 0.053 0.05706 -0.07213
+              
+              Transform {
+      translation 0 0 0
       children [
         HingeJoint {
           jointParameters HingeJointParameters {
@@ -230,14 +233,27 @@ PROTO IDP_Robot [
         }
       ]
     }
+            ]
+            name "solid(5)"
+            boundingObject USE Arm1-Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    
+    
   ]
   physics Physics {
     density -1
+    mass 1
   }
   name IS name
   recognitionColors [
     0 0 0
   ]
+  controller "testController"
 }
 
 }
