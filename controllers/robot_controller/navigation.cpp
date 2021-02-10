@@ -61,12 +61,6 @@ void Navigation::Run(){
     if (!dynamic_cast<InputState*>(stateManager->GetState())) {
         dataBase->receiveData();
     }
-
-    static bool alreadyDone = false;
-    if ( !alreadyDone && dynamic_cast<DoNothingState*>(stateManager->GetState())) {
-        alreadyDone = true;
-        dataBase->printAll(robot);
-    }
 }
 
 void Navigation::EndStep(float leftSpeed, float rightSpeed){
