@@ -29,7 +29,7 @@
 // the amount of number transmitted in each packet through robot communication
 #define PACKET_LENGTH 5
 // the uncertainty in the location of the block - defined experimentally
-#define BLOCK_POS_UNCERTAINTY 1.0
+#define BLOCK_POS_UNCERTAINTY 0.1
 
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
@@ -116,10 +116,11 @@ vec VecSum(unsigned int n, vec *vectors);
 float LargestDistance(unsigned N, vec *vectors);
 
 // type of blocks stored in data base
-enum Colour{dunno, blue, red, question};
+enum Colour{dunno, blue, red, question, robotPos};
 // dunno:		pretty sure there's a block here, dont know the colour
 // blue:		pretty sure there's a blue block here
 // red:			pretty sure there's a red block here
+// robotPos:       pretty sure there's a robot here
 
 // classes
 class Test;
@@ -132,6 +133,8 @@ class SensorDistance;
 class SensorColour;
 class SensorGPS;
 class SensorCompass;
+class SensorEmitter;
+class SensorReceiver;
 
 // state stuff
 class StateManager;

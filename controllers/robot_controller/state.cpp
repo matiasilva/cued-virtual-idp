@@ -65,7 +65,7 @@ State *DCheckingState::Run(){
 }
 
 
-InitialScanState::InitialScanState(Navigation *_nav) : State(_nav){
+InitialScanState::InitialScanState(Navigation *_nav) : InputState(_nav){
 	printf("%c: State changed to 'InitialScanState'\n", nav->GetC());
 }
 State *InitialScanState::Run(){

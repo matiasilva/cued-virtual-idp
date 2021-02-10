@@ -69,6 +69,7 @@ bool DataBase::LogReading(vec position, double bearing, float distance, bool can
 bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigned short *retInd){
     //Debug();
     Colour colour = (iamred ? red : blue);
+	double sqdist;
     if(colourNs[colour]){
       double sqdists[colourNs[colour]];
       for(int i=0; i<colourNs[colour]; i++){
@@ -90,7 +91,21 @@ bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigne
     } else if(colourNs[question]){
       double sqdists[colourNs[question]];
       for(int i=0; i<colourNs[question]; i++){
-        sqdists[i] = (blocks[question][i].position - position).SqMag();
+		  vec pos = blocks[question][i].position;
+		  sqdist = (pos - position).SqMag();
+		  if (sqdist < 0.1*BLOCK_POS_UNCERTAINTY) {
+			  // ensures robot does not pick itself as the destination
+			  sqdist = INFINITY;
+			  // remove block - represents robot
+			  RemoveQuestion(i);
+		  }
+		  else if (pos.x < otherPos.x + BLOCK_POS_UNCERTAINTY && pos.x > otherPos.x - BLOCK_POS_UNCERTAINTY
+			  && pos.z < otherPos.z + BLOCK_POS_UNCERTAINTY && pos.z > otherPos.z - BLOCK_POS_UNCERTAINTY) {
+			  // ensures robot does not pick other robot as the destination
+			  sqdist = INFINITY;
+			  RemoveQuestion(i);
+		  }
+		  sqdists[i] = sqdist;
       }
       unsigned short index = FindMin(colourNs[question], sqdists);
       *retCol = question;
@@ -133,7 +148,7 @@ int DataBase::FindByPosition(vec pos)
 		Block block_db = blocks[(int)i / 32][i % 32];
 		pos_db = block_db.position;
 		// If both x' and y' (new block) correspond to existing x, y with uncertainty BLOCK_POS_UNCERTAINTY u ( (x - u) < x' < (x + u), (y - u) < y' < (y + u)), blocks are deemed equal.
-		if (pos.x < pos_db.x + BLOCK_POS_UNCERTAINTY && pos.x > pos_db.x - BLOCK_POS_UNCERTAINTY
+	if (pos.x < pos_db.x + BLOCK_POS_UNCERTAINTY && pos.x > pos_db.x - BLOCK_POS_UNCERTAINTY
 			&& pos.z < pos_db.z + BLOCK_POS_UNCERTAINTY && pos.z > pos_db.z - BLOCK_POS_UNCERTAINTY) return i;
 	}
 	return -1;
@@ -182,8 +197,68 @@ void DataBase::AddNewBlock(Block* block)
 		block->blockColour = question;
 		blocks[question][colourNs[col]] = *block;
 	}
-	else {
+	else{
 		blocks[col][colourNs[col]] = *block;
 	}
+	colourNs[col] = colourNs[col] + 1;
 
+}
+
+// Communication methods
+
+void DataBase::packData(Block* block, double* data) {
+
+	// Based on packet length
+	*data = block->position.x;
+	*(data + 1) = block->position.z;
+	*(data + 2) = (double)block->blockColour;
+	*(data + 3) = block->primaryKey;
+	*(data + 4) = block->foreignKey;
+}
+
+void DataBase::unpackData(Block* block, double* data) {
+
+	// Based on packet length
+	block->position.x = *data;
+	block->position.z = *(data + 1);
+	block->blockColour = (Colour) * (data + 2);
+	block->primaryKey = (unsigned short int) * (data + 4); // note primary and foreign key swapped here - as reference robot is swapped
+	block->foreignKey = (unsigned short int) * (data + 3);
+}
+
+void DataBase::sendData(Block* block) {
+
+	// Create array of doubles for transmission from given data
+	double data[5];
+
+	packData(block, data);
+	em->send(data);
+}
+
+void DataBase::receiveData() {
+	double* p = rec->getData();
+	while (!rec->getQueueEmpty() || p != NULL) {
+		// receive data from queue
+		Block block;
+		unpackData(&block, p);
+
+		if (block.blockColour == robotPos) {
+			// block received is the position of the other robot
+			otherPos = block.position;
+		} else {
+			// block received is a block identified by the other robot
+			bool keyExists = false;
+			// verify primary key - if it is non-zero
+			if (block.primaryKey != 0) keyExists = VerifyPrimaryKey(block.primaryKey);
+
+			if (keyExists) ModifyBlockByPrimaryKey(&block);
+			else {
+				int ind = FindByPosition(block.position);
+
+				if (ind != -1) ModifyBlockByIndex(&block, ind);
+				else AddNewBlock(&block);
+			}
+	    }
+		p = rec->getData();
+	}
 }

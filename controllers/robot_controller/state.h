@@ -60,6 +60,12 @@ public:
 	State *Run() override;
 };
 
+// type of state where robot is acquiring new block data from its sensors - hence receiving communication data and modification is locked.
+class InputState : public State {
+public:
+	InputState(Navigation* _nav) : State(_nav) {}
+};
+
 
 // ----- Other temporary states -----
 
@@ -96,7 +102,7 @@ private:
 	vec startPos; // position at start of double check
 };
 
-class InitialScanState : public State {
+class InitialScanState : public InputState {
 public:
 	InitialScanState(Navigation *_nav);
 	
@@ -163,6 +169,11 @@ public:
 	// Sets state that will be switched to once current state series has finished (state goes back to 'nullptr' or a temporary state)
 	void SetNextState(State *_nextState){
 		nextState = _nextState;
+	}
+
+	// Get state
+	State* GetState() {
+		return state;
 	}
 	
 private:

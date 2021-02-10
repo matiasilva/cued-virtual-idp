@@ -184,6 +184,7 @@ Robot {
           }
         }
       ]
+      name "emitter"
       channel 1
     }
     DEF RECEIVER Receiver {
@@ -200,6 +201,7 @@ Robot {
           }
         }
       ]
+      name "receiver"
       channel 1
     }
   ]

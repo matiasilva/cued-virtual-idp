@@ -7,6 +7,7 @@
 #define DATABASE
 
 #include "header.h"
+#include "sensor.h"
 
 enum Key {kblue, kred, kboth};
 
@@ -20,9 +21,13 @@ struct Block {
 
 class DataBase {
 public:
-  DataBase(){
+  DataBase(Robot* _robot, int time_step){
   	// initialises all numbers of blocks to zero
     colourNs[dunno] = colourNs[blue] = colourNs[red] = colourNs[question] = 0;
+
+    // initialises all sensors
+    em = new SensorEmitter(_robot, "emitter");
+    rec = new SensorReceiver(_robot, "receiver", time_step);
   }
   ~DataBase(){}
   
@@ -103,6 +108,47 @@ public:
   // method directly assigns a new block to the database, assigning it to the correct category and generating its primary key
   // #param: Pointer to block struct to be added to the database.
   void AddNewBlock(Block* block);
+
+  // Communication methods
+  /**
+   packData function rearranges data from Block object into array of doubles to be transmitted as packets.
+   #param: Pointer to Block struct "block" - representing block in database.
+           double pointer "data" - array of doubles where packet data will be stored.
+*/
+  void packData(Block* block, double* data);
+
+  /**
+     unpackData function rearranges data from packet form to Block struct.
+     #param: Pointer to Block struct "block" - representing block in database.
+             double pointer "data" - array of doubles where packet data is stored.
+  */
+  void unpackData(Block* block, double* data);
+
+  /**
+     sendData sends data for a specific block through emitter as a packet.
+     #param: Pointer to Block struct "block" - representing block in database.
+             Pointer to SensorEmitter object "em" - representing emitter sensor.
+  */
+  void sendData(Block* block);
+
+  /**
+      receiveData operates on receiving all data from receiver and makes use of proper database procedures
+      as to synchronise data between the databases of both robots.
+
+  */
+  void receiveData();
+
+  // sets own position value
+  void setOtherPos(vec pos) {
+      otherPos = pos;
+  }
+
+  void printAll(Robot* _robot) {
+      for (int i = 0; i < colourNs[question]; i++) {
+          Block block = blocks[question][i];
+          printf("%s: Question at %f, %f, Primary: %u, Foreign: %u\n", _robot->getName().c_str(), block.position.x, block.position.z, block.primaryKey, block.foreignKey);
+      }
+  }
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)
@@ -111,6 +157,13 @@ private:
   //         | this is the colour
   unsigned short colourNs[4]; // numbers of blocks stored of each colour
   
+  // Communication sensors
+  SensorEmitter* em;
+  SensorReceiver* rec;
+
+  // Location of other robot
+  vec otherPos;
+
   // Adds a block of unknown colour to the database
   void AddDunnoBlock(Block block){
     Colour colour = dunno;
@@ -124,12 +177,16 @@ private:
       colour = red; // it must be red
     }
     blocks[colour][colourNs[colour]++] = block; // store the new block
+    sendData(&block);
   }
   
   // Adds a new question into the database
   void AddQuestion(Block block){
-    printf("Question added at %f, %f, %u\n", block.position.z, block.position.x, block.primaryKey);
+    printf("Question added at %f, %f\n", block.position.z, block.position.x);
     blocks[question][colourNs[question]++] = block;
+
+    // send block change through emitter
+    sendData(&block);
   }
   // Removes a question from the database. !!! We currently are not doing anything about robots who have a question as their destination when that question is removed.
   void RemoveQuestion(unsigned short index){

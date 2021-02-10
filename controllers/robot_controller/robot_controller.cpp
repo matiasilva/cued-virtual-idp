@@ -7,6 +7,7 @@
 #include "header.h"
 #include "database.h"
 #include "navigation.h"
+#include "sensor.h"
 
 // The arguments of the main function can be specified by the "controllerArgs" field of the Robot node
 int main(int argc, char **argv){
@@ -18,14 +19,14 @@ int main(int argc, char **argv){
   
   // ----- variables -----
   // stores and deals with the controllers knowledge of the arena
-  DataBase *dataBase = new DataBase();
+  DataBase *dataBase = new DataBase(robot, timeStep);
   
   // resposible for robot input and output (at the moment - input to be done by sensor class in future)
   Navigation *navigation = new Navigation(robot, dataBase, timeStep);
   
   // Main loop; perform simulation steps until Webots is stopping the controller
   while(robot->step(timeStep) != -1){
-    
+ 
     // runs the navigation code
     navigation->Run();
 
