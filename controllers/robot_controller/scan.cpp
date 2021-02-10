@@ -4,8 +4,8 @@ Scan::Scan(Robot *_robot, int _timeStep){
 	robot = _robot;
 	timeStep = _timeStep;
 	
-	dsFront = new SensorDistance(robot, "ds_front", timeStep, 0.1, "ds_front");
-	dsRear = new SensorDistance(robot, "ds_rear", timeStep, 0.1, "ds_rear");
+	dsFront = new SensorDistance(robot, "ds_front", timeStep, 0.05, "ds_front");
+	dsRear = new SensorDistance(robot, "ds_rear", timeStep, 0.15, "ds_rear");
 	camera = new SensorColour(robot, "cs_colour", timeStep, "cs_colour");
 	gps = new SensorGPS(robot, "gps", timeStep, "gps");
 	compass = new SensorCompass(robot, "compass", timeStep, "compass");
@@ -16,7 +16,7 @@ vec Scan::ReadPosition(){
 }
 
 double Scan::ReadBearing(){
-	return compass->getOrientation().Bearing();
+	return compass->getBearing();
 }
 
 float Scan::ReadFrontDistance(){

@@ -35,9 +35,6 @@ SensorDistance::SensorDistance(Robot *_robot, string name_in_device, int time_st
 double SensorDistance::getDistance()
 {
   double value = sensor_object->getValue();
-
-
-
   return value+sensor_offset;
 }
 
@@ -129,19 +126,13 @@ vec SensorCompass::getOrientation()
 // SensorCompass get bearing of robot method (radians)
 double SensorCompass::getBearing()
 {
-	vec orientation = getOrientation();
-	double rad = atan2(orientation.z, orientation.x);
-	if (rad < 0.0) rad = rad + 2 * 3.1415926535;
-	return rad;
+	return getOrientation().Bearing(true);
 }
 
 // SensorCompass get bearing of robot method (degrees)
 double SensorCompass::getBearingDeg()
 {
-	vec orientation = getOrientation();
-	double rad = atan2(orientation.z, orientation.x);
-	if (rad < 0.0) rad = rad + 2 * PI;
-	return rad / PI * 180.0;
+	return getOrientation().Bearing(true) / PI * 180.0;
 }
 
 // SensorEmitter Constructor

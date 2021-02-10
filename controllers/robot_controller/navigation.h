@@ -11,6 +11,8 @@
 #include "state.h"
 #include "scan.h"
 
+enum EMotor {leftWheel, rightWheel, arm, leftClaw, rightClaw};
+
 class Navigation {
 public:
   // initialises all inputs and outputs, and works out which robot
@@ -30,9 +32,10 @@ public:
   void SetBearing(double newBearing){ bearing = newBearing; }
   double GetBearing(){ return bearing; }
   vec PositionInFront(){ // position where the block should be in front
-    vec delta = {(float)(0.15*cos(bearing)), (float)(0.15*sin(bearing))};
+    vec delta = {(float)(0.1*cos(bearing)), (float)(0.1*sin(bearing))};
     return position + delta;
   }
+  vec GetInitialPosition(){ return initialPosition; }
   
   bool DBGetDestination();
   bool DBLogReading(bool canConfirm);
@@ -44,6 +47,8 @@ public:
   // sets the motor speeds and integrates them to modify the bearing estimate
   // generally called by state objects to wrap up at the end of each step
   void EndStep(float leftSpeed, float rightSpeed);
+  void SetArmAngle(double angle);
+  void SetClawWidth(float width);
   
 private:
   Robot *robot;
@@ -60,11 +65,12 @@ private:
   bool iAmRed;
   const char names[2] = {'b', 'r'};
   
-  // wheel stuff
-  const char wlNames[WHEELS_N][10] = {"wheel1", "wheel2"};
-  Motor *wheels[WHEELS_N];
+  // motor stuff
+  const char motorNames[MOTORS_N][10] = {"wheel1", "wheel2", "arm", "slider1", "slider2"};
+  Motor *motors[MOTORS_N];
   
   // variables we read in
+  vec initialPosition;
   vec position;
   double bearing;
   double distances[SENSORS_N]; // stores distance sensor readings

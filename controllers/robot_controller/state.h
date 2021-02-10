@@ -127,6 +127,66 @@ private:
 	double turnTo; // how far out are we wiggling to
 };
 
+class GrabbingState : public State {
+public:
+	GrabbingState(Navigation *_nav);
+	
+	State *Run() override;
+	
+private:
+	const double closedWidth = 0.04; // width of closed claw
+	const float time = 1; // seconds to close
+	double mPerStep;
+	unsigned int count;
+	bool grabbing;
+};
+
+class FindingCloseState : public State {
+public:
+	FindingCloseState(Navigation *_nav);
+	
+	State *Run() override;
+	
+private:
+	double expectedBearing;
+	bool turningRight; // which way are we wiggling
+	double turnTo; // how far out are we wiggling to
+	double target;
+	bool toTarget;
+};
+
+class PickingUpState : public State {
+public:
+	PickingUpState(Navigation *_nav);
+	
+	State *Run() override;
+	
+private:
+	const double upperAngle = 0.8; // radians above horizontal
+	const float time = 1; // seconds to go from horizontal to upper angle
+	double radPerStep;
+	unsigned int count;
+};
+
+class ReturningState : public State {
+public:
+	ReturningState(Navigation *_nav);
+	
+	State *Run() override;
+};
+
+class DroppingState : public State {
+public:
+	DroppingState(Navigation *_nav);
+	
+	State *Run() override;
+	
+private:
+	const double closedWidth = 0.04; // width of closed claw
+	const float time = 1; // seconds to open
+	double mPerStep;
+	unsigned int count;
+};
 
 // ----- State Manager -----
 

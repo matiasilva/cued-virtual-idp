@@ -169,6 +169,13 @@ class SensorCompass: public Sensor
 {
 protected:
     Compass* sensor_object;
+    
+    /**
+        Intermediary "get" method which obtains orientation, as 2D vector (vec object), measured from compass.
+        #returns: vec object corresponding to world orientation.
+    */
+    vec getOrientation();
+    
 public:
     /**
         SensorCompass class constructor
@@ -178,12 +185,6 @@ public:
         Method calls parent constructor.
     */
     SensorCompass(Robot* _robot, string name_in_device, int time_step, string name = "Compass Sensor");
-
-    /**
-        Intermediary "get" method which obtains orientation, as 2D vector (vec object), measured from compass.
-        #returns: vec object corresponding to world orientation.
-    */
-    vec getOrientation();
 
     /**
         Intermediary "get" method which obtains bearing (from North - positive x direction), as double, measured from compass.

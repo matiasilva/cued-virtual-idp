@@ -17,7 +17,7 @@
 
 #define PI 3.141592654
 #define SENSORS_N 2
-#define WHEELS_N 2
+#define MOTORS_N 5 // left wheel, right wheel, arm, left claw, right claw
 // half the side length of the arena:
 #define SIDE_HLENGTH 1.19
 // for helping it calibrate when pointing towards a wall:

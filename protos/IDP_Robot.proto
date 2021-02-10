@@ -9,34 +9,149 @@ Robot {
   translation IS translation
   rotation IS rotation
   children [
-  Solid {
+    
+    DEF CS_COLOUR Camera {
+      translation 0 0.02 -0.05
+      rotation 0 1 0 0
       children [
-        DEF Box-Shape Shape {
-          appearance DEF Colour PBRAppearance {
-            baseColor IS colour
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            roughness 1
             metalness 0
           }
-          geometry Mesh {
-            url [
-              "../Webots/Box_Shape.STL"
-            ]
+          geometry Box {
+            size 0.01 0.01 0.01
           }
         }
       ]
-      boundingObject USE Box-Shape
-      physics Physics {
+      name "cs_colour"
+      width 1
+      height 1
+      far 0.1
+    }
+    DEF DS_FRONT DistanceSensor {
+      translation 0 0.02 -0.05
+      rotation 0 1 0 1.570796327
+      lookupTable [0 0 0, 4 4 0]
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_front"
+    }
+    DEF DS_REAR DistanceSensor {
+      translation 0 0.02 0.15
+      rotation 0 1 0 -1.570796327
+      lookupTable [0 0 0, 4 4 0]
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_rear"
+    }
+    DEF GPS_ GPS {
+      translation 0 0 0
+      rotation 0 0 0 0
+      name "gps"
+    }
+    DEF COMPASS Compass {
+      translation 0 0.025 0
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 0 0
+            roughness 1
+            metalness 0
+          }
+          geometry Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "compass"
+    }
+    DEF EMITTER Emitter {
+      translation 0.04 0.06 -0.05
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 1 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "emitter"
+      channel 1
+    }
+    DEF RECEIVER Receiver {
+      translation -0.04 0.06 -0.05
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 1 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "receiver"
+      channel 1
+    }
+    
+    DEF BODY Solid {
+        translation -0.075 0 -0.05
+        children [
+          DEF BoxShape Shape {
+            appearance DEF Colour PBRAppearance {
+              baseColor IS colour
+              metalness 0
+            }
+            geometry Mesh {
+              url [
+                "../Webots/Box_Shape.STL"
+              ]
+            }
+          }
+        ]
+        boundingObject USE BoxShape
+        physics Physics {
       }
       recognitionColors [
         0 0 0
-      ]
+      ]      
     }
-    Transform {
-      translation -0.02 0.0356 0.05
+    
+    DEF WHEEL1 Transform {
+      translation -0.1 0.0356 0
       rotation 0 0 1 1.5708
       children [
         HingeJoint {
           jointParameters HingeJointParameters {
-            axis 0 -1 0
+            axis 0 1 0
           }
           device [
             RotationalMotor {
@@ -47,29 +162,30 @@ Robot {
           endPoint Solid {
             rotation 0 -1 0 0
             children [
-              DEF Wheel-Shape Shape {
+              DEF WheelShape Shape {
                 appearance USE Colour
                 geometry Cylinder {
                   height 0.022
                   radius 0.05
                 }
-              }
-            ]
-            name "solid(4)"
-            boundingObject USE Wheel-Shape
-            physics Physics {
+                }
+              ]
+              name "solid(4)"
+              boundingObject USE WheelShape
+                            contactMaterial "claw"
+              physics Physics {
             }
           }
         }
       ]
     }
-    Transform {
-      translation 0.17 0.0356 0.05
+    DEF WHEEL2 Transform {
+      translation 0.1 0.0356 0
       rotation 0 0 1 1.5708
       children [
         HingeJoint {
           jointParameters HingeJointParameters {
-            axis 0 -1 0
+              axis 0 1 0
           }
           device [
             RotationalMotor {
@@ -79,42 +195,38 @@ Robot {
           ]
           endPoint Solid {
             children [
-              USE Wheel-Shape
+              USE WheelShape
             ]
             name "solid(1)"
-            boundingObject USE Wheel-Shape
+            boundingObject USE WheelShape
+                            contactMaterial "claw"
             physics Physics {
             }
           }
         }
       ]
     }
-    Transform {
-      translation 0.064 0 0.175
-      rotation 1 0 0 3.14159
+    
+    DEF BEARING Solid {
+      translation 0 -0.005 0.125
       children [
-        Solid {
-          children [
-            DEF Bearing-Shape Shape {
-              appearance USE Colour
-              geometry Mesh {
-                url [
-                  "../Webots/Bearing.STL"
-                ]
-              }
-            }
-          ]
-          name "solid(3)"
-          boundingObject USE Bearing-Shape
-          physics Physics {
-            density -1
-            mass 10
+        Shape {
+          geometry DEF CASTOR_BALL Sphere {
+            radius 0.01
           }
         }
       ]
+      name "solid(2)"
+      contactMaterial "slippy"
+      boundingObject USE CASTOR_BALL
+      physics Physics {
+        density -1
+        mass 6
+      }
     }
-    Transform {
-      translation 0.05 0.0813 -0.072
+    
+    DEF ARM Transform {
+      translation -0.025 0.0813 -0.122
       children [
         HingeJoint {
           jointParameters HingeJointParameters {
@@ -129,7 +241,7 @@ Robot {
           endPoint Solid {
             rotation 1 0 0 0
             children [
-              DEF Arm1-Shape Shape {
+              DEF Arm1Shape Shape {
                 appearance USE Colour
                 geometry Mesh {
                   url [
@@ -138,104 +250,110 @@ Robot {
                 }
               }
               
-              Transform {
-      translation 0 0 0
-      children [
-        HingeJoint {
-          jointParameters HingeJointParameters {
-            anchor 0 0.0495 0.025
-          }
-          endPoint Solid {
-            translation -1.843137617529855e-08 -8.933842306470263e-06 -6.158416737931521e-06
-            rotation -0.9594485268236111 -0.245841459926458 -0.13791483225973197 1.1626725913960596e-06
-            children [
-              DEF Arm2-Shape Shape {
-                appearance USE Colour
-                geometry Mesh {
-                  url [
-                    "../Webots/Arm2lower.STL"
-                  ]
-                }
-              }
-              Transform {
-                translation -0.026 -0.018 -0.005
+              DEF LOWERARM Transform {
+                translation 0.003 -0.02424 -0.00013
                 children [
-                  Solid {
-                    children [
-                      DEF Claw1-Shape Shape {
-                        appearance USE Colour
-                        geometry Mesh {
-                          url [
-                            "../Webots/Grabber1upper.STL"
+                  HingeJoint {
+                    jointParameters HingeJointParameters {
+                      anchor 0 0.0495 0.025
+                    }
+                    endPoint Solid {
+                      translation -1.843137617529855e-08 -8.933842306470263e-06 -6.158416737931521e-06
+                      rotation -0.9594485268236111 -0.245841459926458 -0.13791483225973197 1.1626725913960596e-06
+                      children [
+                        DEF Arm2Shape Shape {
+                          appearance USE Colour
+                          geometry Mesh {
+                            url [
+                              "../Webots/Arm2lower.STL"
+                            ]
+                          }
+                        }
+                        DEF UPPERARM Transform {
+                          translation -0.026 -0.018 -0.005
+                          children [
+                            Solid {
+                              children [
+                                DEF Claw1Shape Shape {
+                                  appearance USE Colour
+                                  geometry Mesh {
+                                    url [
+                                      "../Webots/Grabber1upper.STL"
+                                    ]
+                                  }
+                                }
+                              ]
+                              boundingObject USE Claw1Shape
+                              physics Physics {
+                              }
+                            }
                           ]
                         }
+                        DEF CLAW1 SliderJoint {
+                          jointParameters JointParameters {
+                            axis 1 0 0
+                          }
+                          device [
+                            LinearMotor {
+                              name "slider1"
+                              maxForce 10
+                            }
+                          ]
+                          endPoint Solid {
+                            translation -0.02 -0.07 0.055
+                            rotation 0 1 0 1.5708
+                            children [
+                              DEF Grabber1Shape Shape {
+                                appearance USE Colour
+                                geometry Mesh {
+                                  url [
+                                    "../Webots/Grabber2claw.STL"
+                                  ]
+                                }
+                              }
+                            ]
+                            name "solid(1)"
+                            boundingObject USE Grabber1Shape
+                            contactMaterial "claw"
+                            physics Physics {
+                            }
+                          }
+                        }
+                        DEF CLAW2 SliderJoint {
+                          jointParameters JointParameters {
+                            axis 1 0 0
+                          }
+                          device [
+                            LinearMotor {
+                              name "slider2"
+                              maxForce 10
+                            }
+                          ]
+                          endPoint Solid {
+                            translation 0.0650006961016294 -0.07 0
+                            rotation 0 1 0 -1.5707953071795862
+                            children [
+                              USE Grabber1Shape
+                            ]
+                            name "solid(2)"
+                            boundingObject USE Grabber1Shape
+                            contactMaterial "claw"
+                            physics Physics {
+                            }
+                          }
+                        }
+                      ]
+                      name "solid(2)"
+                      boundingObject USE Arm2Shape
+                      physics Physics {
                       }
-                    ]
-                    boundingObject USE Claw1-Shape
-                    physics Physics {
                     }
                   }
                 ]
               }
-              SliderJoint {
-                jointParameters JointParameters {
-                  axis 1 0 0
-                }
-                device [
-                  LinearMotor {
-                  }
-                ]
-                endPoint Solid {
-                  translation -0.02 -0.07 0.055
-                  rotation 0 1 0 1.5708
-                  children [
-                    DEF Grabber1-Shape Shape {
-                      appearance USE Colour
-                      geometry Mesh {
-                        url [
-                          "../Webots/Grabber2claw.STL"
-                        ]
-                      }
-                    }
-                  ]
-                  name "solid(1)"
-                  boundingObject USE Grabber1-Shape
-                  physics Physics {
-                  }
-                }
-              }
-              SliderJoint {
-                jointParameters JointParameters {
-                  axis 1 0 0
-                }
-                device [
-                  LinearMotor {
-                  }
-                ]
-                endPoint Solid {
-                  translation 0.0650006961016294 -0.07 0
-                  rotation 0 1 0 -1.5707953071795862
-                  children [
-                    USE Grabber1-Shape
-                  ]
-                  name "solid(2)"
-                  boundingObject USE Grabber1-Shape
-                  physics Physics {
-                  }
-                }
-              }
-            ]
-            name "solid(2)"
-            boundingObject USE Arm2-Shape
-            physics Physics {
-            }
-          }
-        }
-      ]
-    }
             ]
             name "solid(5)"
-            boundingObject USE Arm1-Shape
+            boundingObject USE Arm1Shape
             physics Physics {
             }
           }
@@ -253,7 +371,7 @@ Robot {
   recognitionColors [
     0 0 0
   ]
-  controller "testController"
+  controller "robot_controller"
 }
 
 }

@@ -17,10 +17,14 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     scan = new Scan(robot, timeStep);
     
     // wheels
-    for(int i=0; i<WHEELS_N; i++){
-      wheels[i] = robot->getMotor(wlNames[i]);
-      wheels[i]->setPosition(INFINITY);
+    for(int i=0; i<MOTORS_N; i++){
+      motors[i] = robot->getMotor(motorNames[i]);
     }
+    motors[leftWheel]->setPosition(INFINITY);
+    motors[rightWheel]->setPosition(INFINITY);
+    motors[arm]->setPosition(0.1);
+    motors[leftClaw]->setPosition(0);
+    motors[rightClaw]->setPosition(0);
     
     // starting so we can read already
     robot->step(timeStep);
@@ -36,7 +40,8 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
       bearing = PI;
       key = kred;
     }
-    printf("%c: Initial = (%f, %f), %d\n", names[iAmRed], position.z, position.x, RD(bearing));
+    initialPosition = position;
+    printf("%c: Initial = (%f, %f), %d\n", names[iAmRed], initialPosition.z, initialPosition.x, RD(bearing));
 }
 
 bool Navigation::DBGetDestination(){
@@ -63,11 +68,20 @@ void Navigation::Run(){
     }
 }
 
+void Navigation::SetArmAngle(double angle){
+	motors[arm]->setPosition(angle);
+}
+void Navigation::SetClawWidth(float width){
+	float dist = (0.1f - width)/2.0f;
+	motors[leftClaw]->setPosition(dist);
+	motors[rightClaw]->setPosition(-dist);
+}
+
 void Navigation::EndStep(float leftSpeed, float rightSpeed){
     //printf("%c: state is %d; vs = %f, %f\n", names[iAmRed], state, leftSpeed, rightSpeed);
     
-    wheels[0]->setVelocity(leftSpeed);
-    wheels[1]->setVelocity(rightSpeed);
+    motors[leftWheel]->setVelocity(leftSpeed);
+    motors[rightWheel]->setVelocity(rightSpeed);
     
     // integrates the wheel velocities to precict the change in orientation
     bearing -= TURN_FACTOR*leftSpeed*timeStep/2000;
