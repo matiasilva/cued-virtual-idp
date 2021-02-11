@@ -132,7 +132,7 @@ State *FindingLostState::Run(){
 	float expected = sqrt(delta.SqMag());
 	float off = fabs(expected - nav->GetDistance(0));
 	double expectedBearing = delta.Bearing();
-	if(off > 0.05){
+	if(off > 0.1){
 		if(turningRight){
 			if(MakePPMP(nav->GetBearing() - (expectedBearing - turnTo)) < 0){
 				turningRight = false;
@@ -268,7 +268,7 @@ State *ReturningState::Run(){
 	double diff = MakePPMP(targetBearing - nav->GetBearing());
 	if(fabs(diff) > 0.1){
 		nav->EndStep(-3 + 6*(diff < 0), -3 + 6*(diff > 0));
-		return this;8
+		return this;
 	}
 	
 	nav->EndStep(4, 4);
