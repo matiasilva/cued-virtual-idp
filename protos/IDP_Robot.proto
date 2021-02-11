@@ -30,8 +30,8 @@ Robot {
       height 1
       far 0.1
     }
-    DEF DS_FRONT DistanceSensor {
-      translation 0 0.02 -0.05
+    DEF DS_LEFT DistanceSensor {
+      translation -0.02 0.02 -0.05
       rotation 0 1 0 1.570796327
       lookupTable [0 0 0, 4 4 0]
       children [
@@ -46,11 +46,11 @@ Robot {
           }
         }
       ]
-      name "ds_front"
+      name "ds_left"
     }
-    DEF DS_REAR DistanceSensor {
-      translation 0 0.02 0.15
-      rotation 0 1 0 -1.570796327
+    DEF DS_RIGHT DistanceSensor {
+      translation 0.02 0.02 -0.05
+      rotation 0 1 0 1.570796327
       lookupTable [0 0 0, 4 4 0]
       children [
         Shape {
@@ -64,7 +64,7 @@ Robot {
           }
         }
       ]
-      name "ds_rear"
+      name "ds_right"
     }
     DEF GPS_ GPS {
       translation 0 0 0
@@ -221,7 +221,7 @@ Robot {
       boundingObject USE CASTOR_BALL
       physics Physics {
         density -1
-        mass 6
+        mass 8
       }
     }
     
@@ -270,7 +270,7 @@ Robot {
                           }
                         }
                         DEF UPPERARM Transform {
-                          translation -0.026 -0.018 -0.005
+                          translation -0.051 -0.018 -0.005
                           children [
                             Solid {
                               children [
@@ -300,7 +300,7 @@ Robot {
                             }
                           ]
                           endPoint Solid {
-                            translation -0.02 -0.07 0.055
+                            translation -0.05 -0.07 0.055
                             rotation 0 1 0 1.5708
                             children [
                               DEF Grabber1Shape Shape {
@@ -330,7 +330,7 @@ Robot {
                             }
                           ]
                           endPoint Solid {
-                            translation 0.0650006961016294 -0.07 0
+                            translation 0.095 -0.07 -0.005
                             rotation 0 1 0 -1.5707953071795862
                             children [
                               USE Grabber1Shape
