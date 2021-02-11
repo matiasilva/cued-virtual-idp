@@ -48,7 +48,7 @@ bool Navigation::DBGetDestination(){
 	return dataBase->GetDestination(iAmRed, position, &destColour, &destIndex);
 }
 bool Navigation::DBLogReading(bool canConfirm){
-	return dataBase->LogReading(position, bearing, distances[0], canConfirm, key);
+	return dataBase->LogReading(position, bearing, distances[0], distances[1], canConfirm, key);
 }
 
 void Navigation::Run(){
@@ -72,7 +72,7 @@ void Navigation::SetArmAngle(double angle){
 	motors[arm]->setPosition(angle);
 }
 void Navigation::SetClawWidth(float width){
-	float dist = (0.1f - width)/2.0f;
+	float dist = (0.14f - width)/2.0f;
 	motors[leftClaw]->setPosition(dist);
 	motors[rightClaw]->setPosition(-dist);
 }

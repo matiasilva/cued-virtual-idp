@@ -40,7 +40,7 @@ public:
   //		- you are looking at/near a known block so we have modified our data according to your reading
   //		- you are looking at/near a question AND 'canConfirm' is 'true', so we have confirmed that question into a known block (colour dunno)
   //		- you are looking at/near a question AND 'canConfirm' is 'false', so we done nothing
-  bool LogReading(vec position, double bearing, float distance, bool canConfirm, Key key);
+  bool LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key);
   
   // Looks over database and stores a new destination for the robot, defined by where the position is stored in 'blocks'
   // Priority of blocks in database as new destinations is as follows:

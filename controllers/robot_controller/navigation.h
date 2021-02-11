@@ -87,8 +87,8 @@ private:
   void TakeReadings(){
     position = scan->ReadPosition();
     bearing = scan->ReadBearing();
-    distances[0] = scan->ReadFrontDistance();
-    distances[1] = scan->ReadRearDistance();
+    distances[0] = scan->ReadLeftDistance();
+    distances[1] = scan->ReadRightDistance();
   }
   
 };

@@ -6,10 +6,15 @@
 
 #include "database.h"
 
-bool DataBase::LogReading(vec position, double bearing, float distance, bool canConfirm, Key key){
-	vec delta = {(float)(distance * cos(bearing)), (float)(distance * sin(bearing))};
-	vec location = position + delta;
-
+bool DataBase::LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key){
+	
+	float difference = fabs(distanceL - distanceR);
+	if(difference > 0.07) return true;
+	
+	float distance = (distanceL + distanceR)/2.0f;
+	vec deltaL = {(float)(distanceL * cos(bearing)), (float)(distanceL * sin(bearing))};
+	vec deltaR = {(float)(distanceR * cos(bearing)), (float)(distanceR * sin(bearing))};
+	vec location = position + 0.5f*(deltaL + deltaR);
 	// we're looking at a wall
 	float tol = TOLERANCE * distance;
 	if(location.z > SIDE_HLENGTH - tol) return true;

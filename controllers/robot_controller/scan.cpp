@@ -4,8 +4,8 @@ Scan::Scan(Robot *_robot, int _timeStep){
 	robot = _robot;
 	timeStep = _timeStep;
 	
-	dsFront = new SensorDistance(robot, "ds_front", timeStep, 0.05, "ds_front");
-	dsRear = new SensorDistance(robot, "ds_rear", timeStep, 0.15, "ds_rear");
+	dsLeft = new SensorDistance(robot, "ds_left", timeStep, 0.05, "ds_left");
+	dsRight = new SensorDistance(robot, "ds_right", timeStep, 0.05, "ds_right");
 	camera = new SensorColour(robot, "cs_colour", timeStep, "cs_colour");
 	gps = new SensorGPS(robot, "gps", timeStep, "gps");
 	compass = new SensorCompass(robot, "compass", timeStep, "compass");
@@ -19,12 +19,12 @@ double Scan::ReadBearing(){
 	return compass->getBearing();
 }
 
-float Scan::ReadFrontDistance(){
-	return dsFront->getDistance();
+float Scan::ReadLeftDistance(){
+	return dsLeft->getDistance();
 }
 
-float Scan::ReadRearDistance(){
-	return dsRear->getDistance();
+float Scan::ReadRightDistance(){
+	return dsRight->getDistance();
 }
 
 Colour Scan::ReadColour(){

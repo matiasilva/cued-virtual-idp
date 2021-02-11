@@ -10,8 +10,8 @@ public:
 	
 	vec ReadPosition();
 	double ReadBearing();
-	float ReadFrontDistance();
-	float ReadRearDistance();
+	float ReadLeftDistance();
+	float ReadRightDistance();
 	Colour ReadColour();
 	
 private:
@@ -19,8 +19,8 @@ private:
 	int timeStep;
 
 	SensorCompass *compass;
-	SensorDistance *dsFront;
-	SensorDistance *dsRear;
+	SensorDistance *dsLeft;
+	SensorDistance *dsRight;
 	SensorColour *camera;
 	SensorGPS *gps;
 };

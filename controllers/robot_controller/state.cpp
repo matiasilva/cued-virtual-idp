@@ -165,7 +165,7 @@ GrabbingState::GrabbingState(Navigation *_nav) : State(_nav){
 State *GrabbingState::Run(){
 	if(grabbing){
 		nav->SetArmAngle(0);
-		float newDist = 0.1f - (mPerStep * ++count);
+		float newDist = 0.14f - (mPerStep * ++count);
 		bool done = false;
 		if(newDist <= closedWidth){
 			newDist = closedWidth;
@@ -282,8 +282,8 @@ DroppingState::DroppingState(Navigation *_nav) : State(_nav){
 State *DroppingState::Run(){
 	float newDist = closedWidth + mPerStep * ++count;
 	bool done = false;
-	if(newDist >= 0.1f){
-		newDist = 0.1f;
+	if(newDist >= 0.14f){
+		newDist = 0.14f;
 		done = true;
 	}
 	nav->SetClawWidth(newDist);
