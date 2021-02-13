@@ -1,0 +1,385 @@
+PROTO IDP_Robot_2 [
+  field SFVec3f translation 0 0.02 0
+  field SFRotation rotation 0 1 0 0
+  field SFColor    colour 1 0 0
+  field SFString   name "robot2"
+]
+{
+Robot {
+  translation IS translation
+  rotation IS rotation
+  children [
+    DEF CS_COLOUR Camera {
+      translation 0 -0.01 -0.1
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 0 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "cs_colour"
+      width 1
+      height 1
+      far 0.1
+    }
+    DEF DS_LEFT DistanceSensor {
+      translation -0.02 -0.01 -0.1
+      rotation 0 1 0 1.570796327
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_left"
+      lookupTable [
+        0 0 0
+        4 4 0
+      ]
+    }
+    DEF DS_RIGHT DistanceSensor {
+      translation 0.02 -0.01 -0.1
+      rotation 0 1 0 1.5708
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0.184314 0.596078 0.847059
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      name "ds_right"
+      lookupTable [
+        0 0 0
+        4 4 0
+      ]
+    }
+    DEF GPS_ GPS {
+    }
+    DEF COMPASS Compass {
+      translation 0 0.085 0.05
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 0 0
+            roughness 1
+            metalness 0
+          }
+          geometry Sphere {
+            radius 0.01
+          }
+        }
+      ]
+    }
+    DEF EMITTER Emitter {
+      translation 0.05 0.04 -0.05
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 0 1 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      channel 1
+    }
+    DEF RECEIVER Receiver {
+      translation -0.05 0.04 -0.05
+      children [
+        Shape {
+          appearance PBRAppearance {
+            baseColor 1 1 0
+            roughness 1
+            metalness 0
+          }
+          geometry Box {
+            size 0.01 0.01 0.01
+          }
+        }
+      ]
+      channel 1
+    }
+    DEF BODY Shape {
+      appearance PBRAppearance {
+        baseColor IS colour
+        roughness 1
+        metalness 0
+      }
+      geometry Box {
+        size 0.15 0.07 0.2
+      }
+    }
+    DEF WHEEL1 Transform {
+      translation -0.086 0 -0.05
+      rotation 0 0 1 1.5708
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            axis 0 1 0
+          }
+          device [
+            RotationalMotor {
+              name "wheel1"
+              maxTorque 100
+            }
+          ]
+          endPoint Solid {
+            translation 2.3901060727113422e-05 3.853693643363078e-07 -1.6714135363290533e-05
+            rotation 6.793507721505018e-05 -0.9999999443148558 -0.00032673400610501864 0.007297683394347295
+            children [
+              DEF WheelShape Shape {
+                appearance DEF Colour PBRAppearance {
+                  baseColor 1 0 0
+                  metalness 0
+                }
+                geometry Cylinder {
+                  height 0.022
+                  radius 0.05
+                }
+              }
+            ]
+            name "solid(4)"
+            contactMaterial "claw"
+            boundingObject USE WheelShape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    DEF WHEEL2 Transform {
+      translation 0.086 0 -0.05
+      rotation 0 0 1 1.5708
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            axis 0 1 0
+          }
+          device [
+            RotationalMotor {
+              name "wheel2"
+              maxTorque 100
+            }
+          ]
+          endPoint Solid {
+            translation 2.388236128703863e-05 3.852777131774233e-07 -1.6753500664989773e-05
+            rotation 6.793499531452159e-05 -0.9999999443148764 -0.0003267339596576075 0.007297683395686074
+            children [
+              USE WheelShape
+            ]
+            name "solid(1)"
+            contactMaterial "claw"
+            boundingObject USE WheelShape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+    DEF BEARING Solid {
+      translation 0 -0.04 0.065
+      children [
+        DEF CASTOR_BALL Shape {
+          geometry Sphere {
+            radius 0.01
+          }
+        }
+      ]
+      name "solid(2)"
+      contactMaterial "slippy"
+      boundingObject USE CASTOR_BALL
+      physics Physics {
+      }
+    }
+    DEF ARM Transform {
+      translation -0.025 0.0813 -0.122
+      children [
+        HingeJoint {
+          jointParameters HingeJointParameters {
+            anchor 0.025 -0.0465 0.1398
+          }
+          device [
+            RotationalMotor {
+              name "arm"
+              maxTorque 100
+            }
+          ]
+          endPoint Solid {
+            translation 0.025000377653300467 -0.026530396804714338 0.04982806026893466
+            rotation -2.558569144272813e-06 -0.22714325069604174 0.9738613575128079 1.6593230851978133e-07
+            children [
+              DEF Arm1Shape Shape {
+                appearance PBRAppearance {
+                  baseColor 0 1 0
+                  roughness 1
+                  metalness 0
+                }
+                geometry Box {
+                  size 0.04 0.04 0.2
+                }
+              }
+              DEF LOWERARM Transform {
+                translation 0.003 -0.02424 -0.01013
+                children [
+                  HingeJoint {
+                    jointParameters HingeJointParameters {
+                      anchor -0.003 0.024 -0.065
+                      springConstant 1
+                      dampingConstant 1
+                    }
+                    endPoint Solid {
+                      translation -0.0029999999999999983 0.024000000000000014 -0.06499999999999995
+                      rotation -0.9594485110661511 -0.24584150670239308 -0.13791485850060758 1.1546236650830976e-06
+                      children [
+                        DEF Arm2Shape Shape {
+                          appearance PBRAppearance {
+                            baseColor 0 1 0
+                            roughness 1
+                            metalness 0
+                          }
+                          geometry Box {
+                            size 0.04 0.04 0.05
+                          }
+                        }
+                        DEF UPPERARM Transform {
+                          translation -0.051 -0.018 -0.005
+                          children [
+                            Solid {
+                              translation 0.053 -0.004 0
+                              children [
+                                DEF Claw1Shape Shape {
+                                  appearance PBRAppearance {
+                                    baseColor 0 1 0
+                                    roughness 1
+                                    metalness 0
+                                  }
+                                  geometry Box {
+                                    size 0.146 0.004 0.06
+                                  }
+                                }
+                              ]
+                              boundingObject USE Claw1Shape
+                              physics Physics {
+                              }
+                            }
+                          ]
+                        }
+                        DEF CLAW1 SliderJoint {
+                          jointParameters JointParameters {
+                            axis 1 0 0
+                          }
+                          device [
+                            LinearMotor {
+                              name "slider1"
+                            }
+                          ]
+                          endPoint Solid {
+                            translation -0.0685 -0.0587 -0.005
+                            children [
+                              DEF Grabber1Shape Shape {
+                                appearance PBRAppearance {
+                                  baseColor 0 1 0
+                                  roughness 1
+                                  metalness 0
+                                }
+                                geometry Box {
+                                  size 0.005 0.07 0.06
+                                }
+                              }
+                            ]
+                            name "solid(1)"
+                            contactMaterial "claw"
+                            boundingObject USE Grabber1Shape
+                            physics Physics {
+                            }
+                          }
+                        }
+                        DEF CLAW2 SliderJoint {
+                          jointParameters JointParameters {
+                            axis 1 0 0
+                          }
+                          device [
+                            LinearMotor {
+                              name "slider2"
+                            }
+                          ]
+                          endPoint Solid {
+                            translation 0.0726 -0.0586 -0.005
+                            children [
+                              USE Grabber1Shape
+                            ]
+                            name "solid(2)"
+                            contactMaterial "claw"
+                            boundingObject USE Grabber1Shape
+                            physics Physics {
+                            }
+                          }
+                        }
+                      ]
+                      name "solid(2)"
+                      boundingObject USE Arm2Shape
+                      physics Physics {
+                      }
+                    }
+                  }
+                ]
+              }
+              DEF ARMHINGE Transform {
+                translation 0 -0.02 0.09
+                children [
+                  Shape {
+                    appearance PBRAppearance {
+                      baseColor 0 1 0
+                      roughness 1
+                      metalness 0
+                    }
+                    geometry Sphere {
+                      radius 0.058
+                      subdivision 3
+                    }
+                  }
+                ]
+              }
+            ]
+            name "solid(5)"
+            boundingObject USE Arm1Shape
+            physics Physics {
+            }
+          }
+        }
+      ]
+    }
+  ]
+  name "robot2"
+  boundingObject USE BODY
+  physics Physics {
+  }
+  recognitionColors [
+    0 0 0
+  ]
+  controller "robot_controller"
+  name IS name
+}
+
+
+}
