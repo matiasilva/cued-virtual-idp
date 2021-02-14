@@ -27,7 +27,7 @@
 // the largest possible horizontal width of a block
 #define BLOCK_WMAX 0.0707107
 // the amount of number transmitted in each packet through robot communication
-#define PACKET_LENGTH 5
+#define PACKET_LENGTH 6
 // the uncertainty in the location of the block - defined experimentally
 #define BLOCK_POS_UNCERTAINTY 0.1
 
@@ -116,11 +116,16 @@ vec VecSum(unsigned int n, vec *vectors);
 float LargestDistance(unsigned N, vec *vectors);
 
 // type of blocks stored in data base
-enum Colour{dunno, blue, red, question, robotPos};
+enum Colour{dunno, blue, red, question};
 // dunno:		pretty sure there's a block here, dont know the colour
 // blue:		pretty sure there's a blue block here
 // red:			pretty sure there's a red block here
-// robotPos:       pretty sure there's a robot here
+
+// type of control command for sending data
+enum Control{addBlock, removeBlock, robotPos};
+// add:         Add given data to database - by creating new block or modifying existing block
+// remove:      Remove block from database - if it exists.
+// robotPos:    Communication of other robot position.
 
 // classes
 class Test;

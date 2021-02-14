@@ -59,13 +59,14 @@ void Navigation::Run(){
     stateManager->Run();
 
     // send robot location
-    Block robotBlock{ position, key, 0, 0, robotPos };
-    dataBase->sendData(&robotBlock);
+    Block robotBlock{ position, key, 0, 0, question };
+    dataBase->sendData(&robotBlock, robotPos);
 
     // Check receiver - only if not an InputState
     if (!dynamic_cast<InputState*>(stateManager->GetState())) {
         dataBase->receiveData();
     }
+
 }
 
 void Navigation::SetArmAngle(double angle){

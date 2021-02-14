@@ -211,7 +211,7 @@ void DataBase::AddNewBlock(Block* block)
 
 // Communication methods
 
-void DataBase::packData(Block* block, double* data) {
+void DataBase::packData(Block* block, double* data, Control command) {
 
 	// Based on packet length
 	*data = block->position.x;
@@ -219,6 +219,7 @@ void DataBase::packData(Block* block, double* data) {
 	*(data + 2) = (double)block->blockColour;
 	*(data + 3) = block->primaryKey;
 	*(data + 4) = block->foreignKey;
+	*(data + 5) = (double)command;
 }
 
 void DataBase::unpackData(Block* block, double* data) {
@@ -231,39 +232,55 @@ void DataBase::unpackData(Block* block, double* data) {
 	block->foreignKey = (unsigned short int) * (data + 3);
 }
 
-void DataBase::sendData(Block* block) {
+void DataBase::sendData(Block* block, Control command) {
 
 	// Create array of doubles for transmission from given data
-	double data[5];
+	double data[6];
 
-	packData(block, data);
+	packData(block, data, command);
 	em->send(data);
 }
 
 void DataBase::receiveData() {
 	double* p = rec->getData();
 	while (!rec->getQueueEmpty() || p != NULL) {
+		bool keyExists = false;
+		int ind;
 		// receive data from queue
 		Block block;
 		unpackData(&block, p);
+		Control command = (Control) * (p + 5);
 
-		if (block.blockColour == robotPos) {
-			// block received is the position of the other robot
-			otherPos = block.position;
-		} else {
+		switch (command) {
+
+			// Add or Modify block
+		case addBlock:
 			// block received is a block identified by the other robot
-			bool keyExists = false;
+
 			// verify primary key - if it is non-zero
 			if (block.primaryKey != 0) keyExists = VerifyPrimaryKey(block.primaryKey);
 
 			if (keyExists) ModifyBlockByPrimaryKey(&block);
 			else {
-				int ind = FindByPosition(block.position);
+				ind = FindByPosition(block.position);
 
 				if (ind != -1) ModifyBlockByIndex(&block, ind);
 				else AddNewBlock(&block);
 			}
-	    }
-		p = rec->getData();
+			break;
+			// Remove block from database
+		case removeBlock:
+
+			// verify index
+			ind = FindByPosition(block.position);
+
+			if (ind != -1) RemoveBlock(ind);
+			break;
+				// Record other robot position
+		case robotPos:
+			otherPos = block.position;
+			break;
+		}
+	    p = rec->getData();
 	}
 }
