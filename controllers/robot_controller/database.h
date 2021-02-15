@@ -8,6 +8,7 @@
 
 #include "header.h"
 #include "sensor.h"
+#include "visualiser.h"
 
 enum Key {kblue, kred, kboth};
 
@@ -21,15 +22,11 @@ struct Block {
 
 class DataBase {
 public:
-  DataBase(Robot* _robot, int time_step){
-  	// initialises all numbers of blocks to zero
-    colourNs[dunno] = colourNs[blue] = colourNs[red] = colourNs[question] = 0;
-
-    // initialises all sensors
-    em = new SensorEmitter(_robot, "emitter");
-    rec = new SensorReceiver(_robot, "receiver", time_step);
-  }
+  DataBase(Robot* _robot, int time_step);
   ~DataBase(){}
+  
+  void Step();
+  void StartVisualiser();
   
   // Compares a distance sensor reading of 'distance' taken from 'position' at bearing '*bearing'
   // 	with the database, and stores the new information.
@@ -42,6 +39,11 @@ public:
   //		- you are looking at/near a question AND 'canConfirm' is 'false', so we done nothing
   bool LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key);
   
+  void ColourAtPos(Colour colour, vec position);
+  
+  void Got(bool iamred, vec position);  
+  void RemoveBlock(Colour colour, unsigned short index);
+  
   // Looks over database and stores a new destination for the robot, defined by where the position is stored in 'blocks'
   // Priority of blocks in database as new destinations is as follows:
   // 	1: if there is a block of the same colour (using 'iAmRed'), the closest to 'position' of these
@@ -49,7 +51,7 @@ public:
   //	3: if there is a question, the closest of these
   // If no new destinations exist, returns false, otherwise returns true.
   // Position of destination can be retrieved using 'GetBlock' with the parameters '*retCol' and '*retInd'
-  bool GetDestination(bool iamred, vec position, Colour *retCol, unsigned short *retInd);
+  bool GetDestination(bool iamred, vec position, vec *destination);
   
   // Stores the position of the database block of colour 'colour' stored at index 'index' in '*ret'
   // Returns success
@@ -150,12 +152,17 @@ public:
       }
   }
   
+  void Render(SDL_Renderer *renderer);
+  
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)
   //			 | this is the index
   Block blocks[4][32];
   //         | this is the colour
   unsigned short colourNs[4]; // numbers of blocks stored of each colour
+  
+  bool robotDest[2];
+  vec robotDestPos[2];
   
   // Communication sensors
   SensorEmitter* em;
@@ -204,6 +211,11 @@ private:
       }
       colourNs[colNum]--;
   }
+  
+  // Visualiser stuff
+  bool visualising;
+  Visualiser *visualiser;
+  
 };
 
 #endif

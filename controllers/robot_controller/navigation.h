@@ -27,8 +27,9 @@ public:
   bool IAmRed(){ return iAmRed; }
   DataBase *GDB(){ return dataBase; }
   vec GetPosition(){ return position; }
-  vec GetDestination(){ RetrieveDBDestination(); return destination; }
+  vec GetDestination(){ return destination; }
   float GetDistance(int which){ return distances[which]; }
+  Colour ReadCamera();
   void SetBearing(double newBearing){ bearing = newBearing; }
   double GetBearing(){ return bearing; }
   vec PositionInFront(){ // position where the block should be in front
@@ -36,7 +37,9 @@ public:
     return position + delta;
   }
   vec GetInitialPosition(){ return initialPosition; }
+  StateManager *GetStateManager(){ return stateManager; }
   
+  void Got();
   bool DBGetDestination();
   bool DBLogReading(bool canConfirm);
   
@@ -77,11 +80,6 @@ private:
   
   // destination stuff
   vec destination;
-  Colour destColour; // location in database of destination block
-  unsigned short destIndex; // location in database of destination block
-  bool RetrieveDBDestination(){ // gets the position of the destination block from the database
-    return dataBase->GetBlock(destColour, destIndex, &destination);
-  }
   
   // gets the gps position and stores it as a vector in the 2D plane
   void TakeReadings(){

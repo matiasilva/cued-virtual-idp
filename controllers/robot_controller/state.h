@@ -125,6 +125,7 @@ public:
 private:
 	bool turningRight; // which way are we wiggling
 	double turnTo; // how far out are we wiggling to
+	const double limit = 0.24f;
 };
 
 class GrabbingState : public State {
@@ -168,6 +169,19 @@ private:
 	unsigned int count;
 };
 
+class LoweringState : public State {
+public:
+	LoweringState(Navigation *_nav);
+	
+	State *Run() override;
+	
+private:
+	const double upperAngle = 0.8; // radians above horizontal
+	const float time = 1; // seconds to go from upper angle to horizontal
+	double radPerStep;
+	unsigned int count;
+};
+
 class ReturningState : public State {
 public:
 	ReturningState(Navigation *_nav);
@@ -183,10 +197,23 @@ public:
 	
 private:
 	const double closedWidth = 0.04; // width of closed claw
-	const float time = 1; // seconds to open
+	const float time = 0.2f; // seconds to open
 	double mPerStep;
 	unsigned int count;
 };
+
+class BackingState : public State {
+public:
+	BackingState(Navigation *_nav);
+	
+	State *Run() override;
+	
+private:
+	const float time = 0.75; // seconds to reverse for
+	int steps;
+	unsigned int count;
+};
+
 
 // ----- State Manager -----
 

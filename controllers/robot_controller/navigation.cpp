@@ -22,7 +22,7 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     }
     motors[leftWheel]->setPosition(INFINITY);
     motors[rightWheel]->setPosition(INFINITY);
-    motors[arm]->setPosition(0.1);
+    motors[arm]->setPosition(0);
     motors[leftClaw]->setPosition(0);
     motors[rightClaw]->setPosition(0);
     
@@ -42,19 +42,29 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     }
     initialPosition = position;
     printf("%c: Initial = (%f, %f), %d\n", names[iAmRed], initialPosition.z, initialPosition.x, RD(bearing));
+    
+    if(!iAmRed) dataBase->StartVisualiser();
+}
+
+void Navigation::Got(){
+	dataBase->Got(iAmRed, position);
 }
 
 bool Navigation::DBGetDestination(){
-	return dataBase->GetDestination(iAmRed, position, &destColour, &destIndex);
+	return dataBase->GetDestination(iAmRed, position, &destination);
 }
 bool Navigation::DBLogReading(bool canConfirm){
 	return dataBase->LogReading(position, bearing, distances[0], distances[1], canConfirm, key);
 }
 
+Colour Navigation::ReadCamera(){
+	Colour col = scan->ReadColour();
+	dataBase->ColourAtPos(col, destination);
+	return col;
+}
+
 void Navigation::Run(){
 	TakeReadings();
-	
-    RetrieveDBDestination();
     
     stateManager->Run();
 
@@ -66,7 +76,9 @@ void Navigation::Run(){
     if (!dynamic_cast<InputState*>(stateManager->GetState())) {
         dataBase->receiveData();
     }
-
+	
+	dataBase->Step();
+	
 }
 
 void Navigation::SetArmAngle(double angle){

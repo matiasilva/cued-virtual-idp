@@ -39,20 +39,20 @@
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:
-CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp state.cpp sensor.cpp scan.cpp test.cpp communication.cpp
+CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp state.cpp sensor.cpp scan.cpp test.cpp communication.cpp visualiser.cpp
 ###
 ### ---- Compilation options ----
 ### if special compilation flags are necessary:
-CFLAGS = -std=c++11 -Wno-gnu-static-float-init -Wno-c++11-extensions -Wno-c++11-long-long
+CFLAGS = -std=c++11 -Wno-gnu-static-float-init -Wno-c++11-extensions -Wno-c++11-long-long  -D_THREAD_SAFE
 ###
 ### ---- Linked libraries ----
 ### if your program needs additional libraries:
-INCLUDE = -I"header.h database.h navigation.h state.h sensor.h scan.h test.h communication.h"
-### LIBRARIES = -L"/path/to/my/library" -lmy_library -lmy_other_library
+INCLUDE = -I"header.h database.h navigation.h state.h sensor.h scan.h test.h communication.h visualiser.h"
+LIBRARIES = -L"../../libraries" -lSDL2
 ###
 ### ---- Linking options ----
 ### if special linking flags are needed:
-### LFLAGS = -s
+LFLAGS =  -lSDL2
 ###
 ### ---- Webots included libraries ----
 ### if you want to use the Webots C API in your C++ controller program:

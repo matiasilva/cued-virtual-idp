@@ -6,6 +6,82 @@
 
 #include "database.h"
 
+DataBase::DataBase(Robot* _robot, int time_step){
+  	// initialises all numbers of blocks to zero
+    colourNs[dunno] = colourNs[blue] = colourNs[red] = colourNs[question] = 0;
+
+    // initialises all sensors
+    em = new SensorEmitter(_robot, "emitter");
+    rec = new SensorReceiver(_robot, "receiver", time_step);
+    
+   	visualising = false;
+   	
+   	robotDest[0] = robotDest[1] = false;
+}
+
+void DataBase::StartVisualiser(){
+	visualiser = new Visualiser(660, 660, this);
+	if(!visualiser->Init()){
+		printf("Visualiser error.\n");
+		return;
+	}
+	visualising = true;
+}
+void DataBase::Step(){
+	if(visualising) visualiser->Loop();
+}
+
+void DataBase::Got(bool iamred, vec position){
+	printf("Got at %f, %f\n", position.z, position.x);
+	Colour col = (Colour)(1 + iamred);
+	
+	double near[12];
+	unsigned short bs[12];
+	unsigned short nearN = 0;
+	float sqDist;
+	for(int b=0; b<colourNs[col]; b++){
+		sqDist = (position - blocks[col][b].position).SqMag();
+		if(sqDist < 0.04){ // reading is near a known block
+			bs[nearN] = b;
+			near[nearN++] = sqDist;
+		}
+	}
+	if(nearN){ // is near at least one known block
+		unsigned short index = FindMin(nearN, near);
+		RemoveBlock(col, index);
+		printf("Block of colour %d, index %d removed.\n", (int)col, index);
+	}
+}
+
+void DataBase::RemoveBlock(Colour colour, unsigned short index){
+	for(int b=index; b<colourNs[colour]-1; b++){
+		blocks[colour][b] = blocks[colour][b+1];
+	}
+	colourNs[colour]--;
+}
+
+void DataBase::ColourAtPos(Colour colour, vec position){
+	double near[12];
+	Colour cs[12]; unsigned short bs[12];
+	unsigned short nearN = 0;
+	float sqDist;
+	for(int c=0; c<3; c++){ // only checks dunnos, reds and blues (not questions)
+		for(int b=0; b<colourNs[c]; b++){
+			sqDist = (position - blocks[c][b].position).SqMag();
+			if(sqDist < BLOCK_WMAX*BLOCK_WMAX){ // reading is near a known block
+				cs[nearN] = (Colour)c; bs[nearN] = b;
+				near[nearN++] = sqDist;
+			}
+		}
+	}
+	if(nearN){ // is near at least one known block
+		unsigned short index = FindMin(nearN, near); // find known block closest to
+		blocks[colour][colourNs[colour]] = blocks[cs[index]][bs[index]];
+		colourNs[colour]++;
+		RemoveBlock(cs[index], bs[index]);
+	}
+}
+
 bool DataBase::LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key){
 	
 	float difference = fabs(distanceL - distanceR);
@@ -71,7 +147,7 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 	}
 }
 
-bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigned short *retInd){
+bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
     //Debug();
     Colour colour = (iamred ? red : blue);
 	double sqdist;
@@ -81,8 +157,9 @@ bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigne
         sqdists[i] = (blocks[colour][i].position - position).SqMag();
       }
       unsigned short index = FindMin(colourNs[colour], sqdists);
-      *retCol = colour;
-      *retInd = index;
+      *destination = blocks[colour][index].position;
+      robotDestPos[iamred] = *destination;
+      robotDest[iamred] = true;
       return true;
     } else if(colourNs[dunno]){
       double sqdists[colourNs[dunno]];
@@ -90,8 +167,9 @@ bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigne
         sqdists[i] = (blocks[dunno][i].position - position).SqMag();
       }
       unsigned short index = FindMin(colourNs[dunno], sqdists);
-      *retCol = dunno;
-      *retInd = index;
+      *destination = blocks[dunno][index].position;
+      robotDestPos[iamred] = *destination;
+      robotDest[iamred] = true;
       return true;
     } else if(colourNs[question]){
       double sqdists[colourNs[question]];
@@ -113,10 +191,12 @@ bool DataBase::GetDestination(bool iamred, vec position, Colour *retCol, unsigne
 		  sqdists[i] = sqdist;
       }
       unsigned short index = FindMin(colourNs[question], sqdists);
-      *retCol = question;
-      *retInd = index;
+      *destination = blocks[question][index].position;
+      robotDestPos[iamred] = *destination;
+      robotDest[iamred] = true;
       return true;
     } else {
+      robotDest[iamred] = false;
       return false;
     }
 }
@@ -282,5 +362,57 @@ void DataBase::receiveData() {
 			break;
 		}
 	    p = rec->getData();
+	}
+}
+
+void DataBase::Render(SDL_Renderer *renderer){
+	SDL_Rect rect;
+	
+	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+	vec pos;
+	for(int q=0; q<colourNs[question]; q++){
+		pos = blocks[question][q].position;
+		rect = {(int)(pos.z*300.0f) - 8 + 330, -(int)(pos.x*300.0f) - 8 + 330, 16, 16};
+		SDL_RenderDrawRect(renderer, &rect);
+	}
+	
+	SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+	for(int q=0; q<colourNs[red]; q++){
+		pos = blocks[red][q].position;
+		rect = {(int)(pos.z*300.0f) - 8 + 330, -(int)(pos.x*300.0f) - 8 + 330, 16, 16};
+		SDL_RenderDrawRect(renderer, &rect);
+	}
+	
+	SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+	for(int q=0; q<colourNs[blue]; q++){
+		pos = blocks[blue][q].position;
+		rect = {(int)(pos.z*300.0f) - 8 + 330, -(int)(pos.x*300.0f) - 8 + 330, 16, 16};
+		SDL_RenderDrawRect(renderer, &rect);
+	}
+	
+	SDL_SetRenderDrawColor(renderer, 0, 255, 0, 255);
+	for(int q=0; q<colourNs[dunno]; q++){
+		pos = blocks[dunno][q].position;
+		rect = {(int)(pos.z*300.0f) - 8 + 330, -(int)(pos.x*300.0f) - 8 + 330, 16, 16};
+		SDL_RenderDrawRect(renderer, &rect);
+	}
+	
+	if(robotDest[0]){
+		SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
+		pos = robotDestPos[0];
+		int x, y;
+		x = (int)(pos.z*300.0f) + 330;
+		y = -(int)(pos.x*300.0f) + 330;
+		SDL_RenderDrawLine(renderer, x - 10, y - 10, x + 10, y + 10);
+		SDL_RenderDrawLine(renderer, x + 10, y - 10, x - 10, y + 10);
+	}
+	if(robotDest[1]){
+		SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+		pos = robotDestPos[1];
+		int x, y;
+		x = (int)(pos.z*300.0f) + 330;
+		y = -(int)(pos.x*300.0f) + 330;
+		SDL_RenderDrawLine(renderer, x - 10, y - 10, x + 10, y + 10);
+		SDL_RenderDrawLine(renderer, x + 10, y - 10, x - 10, y + 10);
 	}
 }

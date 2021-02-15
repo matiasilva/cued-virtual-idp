@@ -25,7 +25,7 @@ State *DefaultState::Run(){
 		return this;
 	}
 	// can have a new destination
-	//printf("%c: New destination: %f, %f\n", names[iAmRed], destination.z, destination.x);
+	printf("%c: New destination: %f, %f\n", nav->GetC(), nav->GetDestination().z, nav->GetDestination().x);
 	nav->EndStep(0, 0);
 	return new MovingToState(nav);
 }
@@ -94,12 +94,14 @@ MovingToState::MovingToState(Navigation *_nav) : State(_nav){
 	printf("%c: State changed to 'MovingToState'\n", nav->GetC());
 }
 State *MovingToState::Run(){
+	// have we reached our destination?
 	if((nav->PositionInFront() - nav->GetDestination()).SqMag() < 0.0002){
 		nav->EndStep(0, 0);
 		//printf("%c: Found.\n", names[iAmRed]);
 		return new GrabbingState(nav);
 	}
 	
+	// are we looking in the right direction?
 	vec delta = nav->GetDestination() - nav->GetPosition();
 	double targetBearing = delta.Bearing();
 	double diff = MakePPMP(targetBearing - nav->GetBearing());
@@ -108,17 +110,27 @@ State *MovingToState::Run(){
 		return this;
 	}
 	
+	// are our distance sensors looking at the block?
+	float dLeft = nav->GetDistance(0);
+	float dRight = nav->GetDistance(1);
 	float expected = sqrt(delta.SqMag());
-	float off = fabs(expected - nav->GetDistance(0));
-	if(off > 0.05){
-		nav->EndStep(0, 0);
-		return new FindingLostState(nav);
-	} else {
-		nav->DBLogReading(false);
-		nav->SetBearing(targetBearing);
-		nav->EndStep(4, 4);
+	bool leftCons = fabs(expected - dLeft) < 0.07;
+	bool rightCons = fabs(expected - dRight) < 0.07;
+	int cons = leftCons + rightCons;
+	if(cons){
+		if(cons == 2){
+			// we are looking at the block
+			nav->DBLogReading(true);
+			nav->EndStep(10, 10);
+			return this;
+		}
+		// only one side is looking at the block
+		nav->EndStep(2 + 2*rightCons, 2 + 2*leftCons);
 		return this;
 	}
+	// we aren't looking at the block
+	nav->EndStep(0, 0);
+	return new FindingLostState(nav);
 }
 
 
@@ -128,11 +140,15 @@ FindingLostState::FindingLostState(Navigation *_nav) : State(_nav){
 	turnTo = 0.08;
 }
 State *FindingLostState::Run(){
+	nav->DBLogReading(false);
 	vec delta = nav->GetDestination() - nav->GetPosition();
 	float expected = sqrt(delta.SqMag());
-	float off = fabs(expected - nav->GetDistance(0));
+	float dLeft = nav->GetDistance(0);
+	float dRight = nav->GetDistance(1);
+	bool cons = (fabs(expected - dLeft) < 0.07) + (fabs(expected - dRight) < 0.07);
 	double expectedBearing = delta.Bearing();
-	if(off > 0.1){
+	if(!cons){
+		if(turnTo >= limit) return nullptr;
 		if(turningRight){
 			if(MakePPMP(nav->GetBearing() - (expectedBearing - turnTo)) < 0){
 				turningRight = false;
@@ -151,7 +167,6 @@ State *FindingLostState::Run(){
 		}
 		return this;
 	} else {
-		nav->SetBearing(expectedBearing);
 		nav->EndStep(0, 0);
 		return new MovingToState(nav);
 	}
@@ -164,6 +179,9 @@ GrabbingState::GrabbingState(Navigation *_nav) : State(_nav){
 }
 State *GrabbingState::Run(){
 	if(grabbing){
+		Colour blockColour = nav->ReadCamera();
+		if(nav->IAmRed() + 1 != (int)blockColour) return new BackingState(nav);
+				
 		nav->SetArmAngle(0);
 		float newDist = 0.14f - (mPerStep * ++count);
 		bool done = false;
@@ -248,7 +266,31 @@ State *PickingUpState::Run(){
 	}
 	nav->SetArmAngle(newAngle);
 	nav->EndStep(0, 0);
-	if(done) return new ReturningState(nav);
+	if(done){
+		if(nav->GetDistance(0) > 0.08 && nav->GetDistance(1) > 0.08){
+			nav->Got();
+			return new ReturningState(nav);
+		}
+		return nullptr;
+	}
+	return this;
+}
+
+LoweringState::LoweringState(Navigation *_nav) : State(_nav){
+	printf("%c: State changed to 'LoweringState'\n", nav->GetC());
+	radPerStep = upperAngle / (time*1000/nav->GetTS());
+	count = 0;
+}
+State *LoweringState::Run(){
+	double newAngle = upperAngle - radPerStep * ++count;
+	bool done = false;
+	if(newAngle <= 0){
+		newAngle = 0;
+		done = true;
+	}
+	nav->SetArmAngle(newAngle);
+	nav->EndStep(0, 0);
+	if(done) return new DroppingState(nav);
 	return this;
 }
 
@@ -260,7 +302,7 @@ State *ReturningState::Run(){
 	if((nav->PositionInFront() - nav->GetInitialPosition()).SqMag() < 0.0004){
 		nav->EndStep(0, 0);
 		//printf("%c: Found.\n", names[iAmRed]);
-		return new DroppingState(nav);
+		return new LoweringState(nav);
 	}
 	
 	vec delta = nav->GetInitialPosition() - nav->GetPosition();
@@ -271,7 +313,7 @@ State *ReturningState::Run(){
 		return this;
 	}
 	
-	nav->EndStep(4, 4);
+	nav->EndStep(10, 10);
 	return this;
 }
 
@@ -288,6 +330,17 @@ State *DroppingState::Run(){
 	}
 	nav->SetClawWidth(newDist);
 	nav->EndStep(0, 0);
-	if(done) return new WaitState(nav, 2);
+	if(done) return new BackingState(nav);
+	return this;
+}
+
+BackingState::BackingState(Navigation *_nav) : State(_nav){
+	printf("%c: State changed to 'BackingState'\n", nav->GetC());
+	steps = time*1000/nav->GetTS();
+	count = 0;
+}
+State *BackingState::Run(){
+	nav->EndStep(-3, -3);
+	if(count++ > steps) return nullptr;
 	return this;
 }
