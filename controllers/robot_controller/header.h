@@ -14,7 +14,10 @@
 #include <webots/Compass.hpp>
 #include <webots/Emitter.hpp>
 #include <webots/Receiver.hpp>
-#include <SDL2/SDL.h>
+
+// ========== comment this out for windows
+//#include <SDL2/SDL.h>
+// ==========
 
 #define PI 3.141592654
 #define SENSORS_N 2

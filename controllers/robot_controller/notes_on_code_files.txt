@@ -16,3 +16,10 @@ Always put a '\n' at the end of any string passed to 'printf()', as it seems tha
 		 console AT THE TIME YOU CALL 'printf("bar\n")')
 
 Don't use 'assert' for test code, 'assert(false)' just crashes the controller without any explanation in the Webots console. Instead just use 'printf' or something similar.
+
+On windows, disable the visualiser by making changes in the following places:
+	Makefile lines 44, 54, 57
+	header.h line 19
+	database.h lines 13, 156
+	database.cpp lines 25, 35, 372
+	navigation.h line 58

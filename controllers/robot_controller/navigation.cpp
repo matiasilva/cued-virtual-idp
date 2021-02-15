@@ -43,7 +43,7 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     initialPosition = position;
     printf("%c: Initial = (%f, %f), %d\n", names[iAmRed], initialPosition.z, initialPosition.x, RD(bearing));
     
-    if(!iAmRed) dataBase->StartVisualiser();
+    if(!iAmRed && visualiserActive) dataBase->StartVisualiser();
 }
 
 void Navigation::Got(){

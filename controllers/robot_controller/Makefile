@@ -39,7 +39,9 @@
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:
-CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp state.cpp sensor.cpp scan.cpp test.cpp communication.cpp visualiser.cpp
+
+# =========== comment out / remove visualiser.cpp for windows
+CXX_SOURCES = robot_controller.cpp other.cpp database.cpp navigation.cpp state.cpp sensor.cpp scan.cpp test.cpp communication.cpp# visualiser.cpp
 ###
 ### ---- Compilation options ----
 ### if special compilation flags are necessary:
@@ -47,8 +49,14 @@ CFLAGS = -std=c++11 -Wno-gnu-static-float-init -Wno-c++11-extensions -Wno-c++11-
 ###
 ### ---- Linked libraries ----
 ### if your program needs additional libraries:
-INCLUDE = -I"header.h database.h navigation.h state.h sensor.h scan.h test.h communication.h visualiser.h"
-LIBRARIES = -L"../../libraries" -lSDL2
+
+# =========== comment out / remove visualiser.h for windows
+INCLUDE = -I"header.h database.h navigation.h state.h sensor.h scan.h test.h communication.h"# visualiser.h"
+
+# =========== comment this out for windows
+#LIBRARIES = -L"../../libraries" -lSDL2
+# ===========
+
 ###
 ### ---- Linking options ----
 ### if special linking flags are needed:

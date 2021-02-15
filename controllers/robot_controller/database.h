@@ -8,7 +8,9 @@
 
 #include "header.h"
 #include "sensor.h"
-#include "visualiser.h"
+
+// ======== comment this out for windows
+//#include "visualiser.h"
 
 enum Key {kblue, kred, kboth};
 
@@ -152,7 +154,8 @@ public:
       }
   }
   
-  void Render(SDL_Renderer *renderer);
+  // ========== comment this out for windows
+  //void Render(SDL_Renderer *renderer);
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)

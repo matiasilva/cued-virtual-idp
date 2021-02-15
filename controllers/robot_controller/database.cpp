@@ -20,15 +20,19 @@ DataBase::DataBase(Robot* _robot, int time_step){
 }
 
 void DataBase::StartVisualiser(){
-	visualiser = new Visualiser(660, 660, this);
+	
+	// ========= comment this out for windows
+	/*visualiser = new Visualiser(660, 660, this);
 	if(!visualiser->Init()){
 		printf("Visualiser error.\n");
 		return;
 	}
-	visualising = true;
+	visualising = true;*/
 }
 void DataBase::Step(){
-	if(visualising) visualiser->Loop();
+	
+	// =========== comment this our for windows
+	//if(visualising) visualiser->Loop();
 }
 
 void DataBase::Got(bool iamred, vec position){
@@ -365,6 +369,8 @@ void DataBase::receiveData() {
 	}
 }
 
+// ========= comment this whole function out for windows
+/*
 void DataBase::Render(SDL_Renderer *renderer){
 	SDL_Rect rect;
 	
@@ -416,3 +422,4 @@ void DataBase::Render(SDL_Renderer *renderer){
 		SDL_RenderDrawLine(renderer, x + 10, y - 10, x - 10, y + 10);
 	}
 }
+*/

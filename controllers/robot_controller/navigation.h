@@ -54,6 +54,9 @@ public:
   void SetClawWidth(float width);
   
 private:
+	// =========== set this to false for windows
+  const bool visualiserActive = false;
+
   Robot *robot;
   DataBase *dataBase;
   int timeStep;
