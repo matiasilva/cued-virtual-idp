@@ -14,8 +14,8 @@ DataBase::DataBase(Robot* _robot, int time_step){
     em = new SensorEmitter(_robot, "emitter");
     rec = new SensorReceiver(_robot, "receiver", time_step);
 
-	if (_robot->getName() == "skids") ownCol = red;
-	else ownCol = blue;
+	if (_robot->getName() == "skids") ownCol = blue;
+	else ownCol = red;
     
    	visualising = false;
    	
@@ -25,17 +25,18 @@ DataBase::DataBase(Robot* _robot, int time_step){
 void DataBase::StartVisualiser(){
 	
 	// ========= comment this out for windows
-	visualiser = new Visualiser(660, 660, this);
+	/*visualiser = new Visualiser(660, 660, this);
 	if(!visualiser->Init()){
 		printf("Visualiser error.\n");
 		return;
 	}
 	visualising = true;
+	*/
 }
 void DataBase::Step(){
 	
 	// =========== comment this our for windows
-	if(visualising) visualiser->Loop();
+	//if(visualising) visualiser->Loop();
 }
 
 void DataBase::Got(bool iamred, vec position){
@@ -55,6 +56,7 @@ void DataBase::Got(bool iamred, vec position){
 	}
 	if(nearN){ // is near at least one known block
 		unsigned short index = FindMin(nearN, near);
+		Debug();
 		RemoveBlock(col, index);
 		printf("Block of colour %d, index %d removed.\n", (int)col, index);
 	}
@@ -69,8 +71,8 @@ void DataBase::RemoveBlock(Colour colour, unsigned short index){
 }
 
 void DataBase::ColourAtPos(Colour colour, vec position, Key key){
-	double near[12];
-	Colour cs[12]; unsigned short bs[12];
+	double near[BLOCKSEACH];
+	Colour cs[BLOCKSEACH]; unsigned short bs[BLOCKSEACH];
 	unsigned short nearN = 0;
 	float sqDist;
 	for(int c=0; c<4; c++){ // only checks dunnos, reds, blues and questions
@@ -86,13 +88,13 @@ void DataBase::ColourAtPos(Colour colour, vec position, Key key){
 		unsigned short index = FindMin(nearN, near); // find known block closest to
 		blocks[colour][colourNs[colour]] = blocks[cs[index]][bs[index]];
 		blocks[colour][colourNs[colour]].blockColour = colour;
-		if (colour != ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
+		if (colour == ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
 		colourNs[colour]++;
 		RemoveBlock(cs[index], bs[index]);
 	} else { // is not near at least one known block
 		unsigned short int primaryKey = GenerateKey();
 		blocks[colour][colourNs[colour]] = {position, key, primaryKey, 0, colour};
-		if (colour != ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
+		if (colour == ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
 		colourNs[colour]++;
 	}
 }
@@ -114,8 +116,8 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 	if(location.x < -SIDE_HLENGTH + tol) return true;
     
 	// a block is being seen?
-	double near[12];
-	Colour cs[12]; unsigned short bs[12];
+	double near[BLOCKSEACH];
+	Colour cs[BLOCKSEACH]; unsigned short bs[BLOCKSEACH];
 	unsigned short nearN = 0;
 	float sqDist;
 	for(int c=0; c<3; c++){ // only checks dunnos, reds and blues (not questions)
@@ -132,7 +134,7 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 		vec newPos = 0.5 * (blocks[cs[index]][bs[index]].position + location);
 		blocks[cs[index]][bs[index]].position = newPos; // move position of block to average of previous thought position and new reading
 		blocks[cs[index]][bs[index]].seenBy = key;
-		printf("Block position updated at %f, %f\n", blocks[cs[index]][bs[index]].position.z, blocks[cs[index]][bs[index]].position.x);
+		//printf("Block position updated at %f, %f\n", blocks[cs[index]][bs[index]].position.z, blocks[cs[index]][bs[index]].position.x);
 		if(newDest){
 			*newDest = newPos;
 			robotDestPos[key] = newPos;
@@ -255,8 +257,10 @@ short unsigned int DataBase::GenerateKey()
 bool DataBase::VerifyPrimaryKey(unsigned short int pkey)
 {
 	bool found = false;
-	for (int i = 0; i < 4 * 32; i++) {
-		if (blocks[(int)i / 32][i % 32].primaryKey == pkey) found = true;
+	for (int c=0; c<4; c++) {
+		for(int b=0; b<colourNs[c]; b++){
+			if (blocks[c][b].primaryKey == pkey) found = true;
+		}
 	}
 	return found;
 }
@@ -264,8 +268,10 @@ bool DataBase::VerifyPrimaryKey(unsigned short int pkey)
 int DataBase::FindByPrimaryKey(unsigned short int pkey)
 {
 	int index = -1;
-	for (int i = 0; i < 4 * 32; i++) {
-		if (blocks[(int)i / 32][i % 32].primaryKey == pkey) index  = i;
+	for (int c=0; c<4; c++) {
+		for(int b=0; b<colourNs[c]; b++){
+			if (blocks[c][b].primaryKey == pkey) index = c*BLOCKSEACH + b;
+		}
 	}
 	return index;
 }
@@ -273,12 +279,13 @@ int DataBase::FindByPrimaryKey(unsigned short int pkey)
 int DataBase::FindByPosition(vec pos)
 {
 	vec pos_db;
-	for (int i = 0; i < 4 * 32; i++) {
-		Block block_db = blocks[(int)i / 32][i % 32];
-		pos_db = block_db.position;
-		// If both x' and y' (new block) correspond to existing x, y with uncertainty BLOCK_POS_UNCERTAINTY u ( (x - u) < x' < (x + u), (y - u) < y' < (y + u)), blocks are deemed equal.
-	if (pos.x < pos_db.x + BLOCK_POS_UNCERTAINTY && pos.x > pos_db.x - BLOCK_POS_UNCERTAINTY
-			&& pos.z < pos_db.z + BLOCK_POS_UNCERTAINTY && pos.z > pos_db.z - BLOCK_POS_UNCERTAINTY) return i;
+	for (int c=0; c<4; c++) {
+		for(int b=0; b<colourNs[c]; b++){
+			pos_db = blocks[c][b].position;
+			// If both x' and y' (new block) correspond to existing x, y with uncertainty BLOCK_POS_UNCERTAINTY u ( (x - u) < x' < (x + u), (y - u) < y' < (y + u)), blocks are deemed equal.
+			if(	pos.x < pos_db.x + BLOCK_POS_UNCERTAINTY && pos.x > pos_db.x - BLOCK_POS_UNCERTAINTY
+				&& pos.z < pos_db.z + BLOCK_POS_UNCERTAINTY && pos.z > pos_db.z - BLOCK_POS_UNCERTAINTY) return c*BLOCKSEACH + b;
+		}
 	}
 	return -1;
 
@@ -292,43 +299,49 @@ void DataBase::ModifyBlockByPrimaryKey(Block* block, bool forceChange)
     int found_index = FindByPrimaryKey(block->primaryKey);
 	if (found_index == -1) return; // block with primary key not in database
 
-	Block block_db = blocks[(int)found_index / 32][found_index % 32];
+	Block block_db = blocks[(int)found_index / BLOCKSEACH][found_index % BLOCKSEACH];
 
 	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block.
 	if (forceChange || (block_db.blockColour != block->blockColour && block->blockColour != dunno)) {
-		blocks[(int)found_index / 32][found_index % 32] = *block;
+		blocks[(int)found_index / BLOCKSEACH][found_index % BLOCKSEACH] = *block;
 		blocks[block->blockColour][colourNs[block->blockColour]] = *block; // Add block to new subarray
 		colourNs[block->blockColour]++;
-		RemoveBlock(block_db.blockColour, found_index % 32); // Remove block from previous colour subarray
+		RemoveBlock(block_db.blockColour, found_index % BLOCKSEACH); // Remove block from previous colour subarray
 	}
 	
 }
 
 void DataBase::ModifyBlockByIndex(Block* block, int index, bool forceChange)
 {
-	Block block_db = blocks[(int)index / 32][index % 32];
+	Block block_db = blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH];
 
 	// set foreign key and primary keys to match
-	blocks[(int)index / 32][index % 32].foreignKey = block->foreignKey;
+	blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH].foreignKey = block->foreignKey;
 	block->primaryKey = block_db.primaryKey;
 
 
 	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block to a colour that is either red or blue.
 	if (forceChange || (block_db.blockColour != block->blockColour && block->blockColour != dunno)) {
-		blocks[(int)index / 32][index % 32] = *block;
+		blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH] = *block;
 		blocks[block->blockColour][colourNs[block->blockColour]] = *block; // Add block to new subarray
 		colourNs[block->blockColour]++;
-		RemoveBlock(block_db.blockColour, index % 32); // Remove block from previous colour subarray
+		RemoveBlock(block_db.blockColour, index % BLOCKSEACH); // Remove block from previous colour subarray
 	}
 
 }
 
 void DataBase::RemoveByPosition(vec position){
 	int index = FindByPosition(position);
-	
-	Block block_db = blocks[(int)index / 32][index % 32];
-
-	RemoveBlock(block_db.blockColour, index % 32); // Remove block from array
+	if(index == -1){
+		printf("Tried to remove non-existent block.\n");
+		return;
+	}
+	printf("Removing block by position: index %d.\n", index);
+	Block block_db = blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH];
+	printf("Block: %d, %d\n", (int)index / BLOCKSEACH, index % BLOCKSEACH);
+	printf("Blocks of colour %d: %d\n", (int)index / BLOCKSEACH, colourNs[(int)index / BLOCKSEACH]);
+	block_db.blockColour = (Colour)(index / BLOCKSEACH);
+	RemoveBlock(block_db.blockColour, index % BLOCKSEACH); // Remove block from array
 }
 
 void DataBase::AddNewBlock(Block* block)
@@ -429,10 +442,11 @@ void DataBase::receiveData() {
 }
 
 // ========= comment this whole function out for windows
-
+/*
 void DataBase::Render(SDL_Renderer *renderer){
 	SDL_Rect rect;
 	
+	// blocks	
 	SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
 	vec pos;
 	for(int q=0; q<colourNs[question]; q++){
@@ -462,6 +476,7 @@ void DataBase::Render(SDL_Renderer *renderer){
 		SDL_RenderDrawRect(renderer, &rect);
 	}
 	
+	// destinations
 	if(robotDest[0]){
 		SDL_SetRenderDrawColor(renderer, 0, 0, 255, 255);
 		pos = robotDestPos[0];
@@ -480,4 +495,26 @@ void DataBase::Render(SDL_Renderer *renderer){
 		SDL_RenderDrawLine(renderer, x - 10, y - 10, x + 10, y + 10);
 		SDL_RenderDrawLine(renderer, x + 10, y - 10, x - 10, y + 10);
 	}
+	
+	// robots
+	RGB myColour = (ownCol == blue ? (RGB){0, 0, 255} : (RGB){255, 0, 0});
+	RGB otherColour = (ownCol == blue ? (RGB){255, 0, 0} : (RGB){0, 0, 255});
+	int x, y;
+	
+	SDL_SetRenderDrawColor(renderer, myColour.r, myColour.g, myColour.b, 255);
+	x = (int)(myPos.z*300.0f) + 330;
+	y = -(int)(myPos.x*300.0f) + 330;
+	rect = {x - 12, y - 12, 24, 24};
+	SDL_RenderDrawRect(renderer, &rect);
+	rect = {x - 14, y - 14, 28, 28};
+	SDL_RenderDrawRect(renderer, &rect);
+	
+	SDL_SetRenderDrawColor(renderer, otherColour.r, otherColour.g, otherColour.b, 255);
+	x = (int)(otherPos.z*300.0f) + 330;
+	y = -(int)(otherPos.x*300.0f) + 330;
+	rect = {x - 12, y - 12, 24, 24};
+	SDL_RenderDrawRect(renderer, &rect);
+	rect = {x - 14, y - 14, 28, 28};
+	SDL_RenderDrawRect(renderer, &rect);
 }
+*/

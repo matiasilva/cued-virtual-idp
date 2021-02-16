@@ -55,7 +55,9 @@ public:
 // special default state - only created once, and is reverted back to when has no other state to go to
 class DefaultState : public TemporaryState {
 public:
-	DefaultState(Navigation *_nav) : TemporaryState(_nav){}
+	DefaultState(Navigation *_nav) : TemporaryState(_nav){
+		printf("Default state created.\n");
+	}
 	
 	State *Run() override;
 };
@@ -154,6 +156,7 @@ private:
 	double turnTo; // how far out are we wiggling to
 	double target;
 	bool toTarget;
+	const double limit = 0.24f;
 };
 
 class PickingUpState : public State {
@@ -228,6 +231,7 @@ public:
 	~StateManager(){}
 	
 	void Run(){
+		if(!defaultState) printf("Default state has gone!n");
 		if(!state){
 			state = defaultState;
 			printf("State changed to default state.\n");
@@ -251,11 +255,13 @@ public:
 	//		This means, of course, that if you want to immediately skip to whatever state is stored in 'nextState', this can be
 	//		achieved by calling this function with any temporary state as the parameter.
 	void ForceStateChange(State *_state){
+		if(state && state != defaultState) delete state;
 		state = _state;
 	}
 	
 	// Sets state that will be switched to once current state series has finished (state goes back to 'nullptr' or a temporary state)
 	void SetNextState(State *_nextState){
+		if(nextState && nextState != defaultState) delete nextState;
 		nextState = _nextState;
 	}
 

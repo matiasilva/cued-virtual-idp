@@ -16,9 +16,11 @@
 #include <webots/Receiver.hpp>
 
 // ========== comment this out for windows
-#include <SDL2/SDL.h>
+//#include <SDL2/SDL.h>
 // ==========
 
+#define COLOURS 4
+#define BLOCKSEACH 64
 #define PI 3.141592654
 #define SENSORS_N 2
 #define MOTORS_N 5 // left wheel, right wheel, arm, left claw, right claw

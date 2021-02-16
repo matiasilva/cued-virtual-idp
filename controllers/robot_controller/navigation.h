@@ -56,7 +56,7 @@ public:
   
 private:
 	// =========== set this to false for windows
-  const bool visualiserActive = true;
+  const bool visualiserActive = false;
 
   Robot *robot;
   DataBase *dataBase;

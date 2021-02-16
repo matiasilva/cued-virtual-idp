@@ -148,11 +148,14 @@ State *FindingLostState::Run(){
 	float expected = sqrt(delta.SqMag());
 	float dLeft = nav->GetDistance(0);
 	float dRight = nav->GetDistance(1);
-	bool cons = ((fabs(expected - dLeft) < 0.06) + (fabs(expected - dRight) < 0.06))*(fabs(dLeft - dRight) < 0.05f);
+	bool leftCons = fabs(expected - dLeft) < 0.07f;
+	bool rightCons = fabs(expected - dRight) < 0.07f;
+	bool cons = (leftCons + rightCons)*(fabs(dLeft - dRight) < 0.05f);
 	double expectedBearing = delta.Bearing();
 	if(!cons){
 		if(turnTo >= limit){
 			nav->DestinationInvalid();
+			nav->EndStep(0, 0);
 			return nullptr;
 		}
 		if(turningRight){
@@ -231,7 +234,12 @@ State *FindingCloseState::Run(){
 		nav->EndStep(-d, d);
 		return this;
 	}
-	if(nav->GetDistance(0) > 0.15){
+	if(0.5*(nav->GetDistance(0) + nav->GetDistance(1)) > 0.15){
+		if(turnTo >= limit){
+			nav->DestinationInvalid();
+			nav->EndStep(0, 0);
+			return nullptr;
+		}
 		if(turningRight){
 			if(MakePPMP(nav->GetBearing() - (expectedBearing - turnTo)) < 0){
 				turningRight = false;
@@ -318,7 +326,7 @@ State *ReturningState::Run(){
 		return this;
 	}
 	
-	nav->EndStep(10, 10);
+	nav->EndStep(5, 5);
 	return this;
 }
 
@@ -335,8 +343,10 @@ State *DroppingState::Run(){
 	}
 	nav->SetClawWidth(newDist);
 	nav->EndStep(0, 0);
-	nav->GetStateManager()->SetNextState(new LoweringState(nav));
-	if(done) return new BackingState(nav);
+	if(done){
+		nav->GetStateManager()->SetNextState(new LoweringState(nav));
+		return new BackingState(nav);
+	}
 	return this;
 }
 

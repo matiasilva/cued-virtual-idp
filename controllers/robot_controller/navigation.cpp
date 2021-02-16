@@ -31,7 +31,7 @@ Navigation::Navigation(Robot *_robot, DataBase *_dataBase, int _timeStep) {
     
     // reading position to figure out which robot this instance of the controller is controlling
     position = scan->ReadPosition();
-    if(position.z < 0){
+    if(robot->getName() == "skids"){
       iAmRed = false;
       bearing = 0;
       key = kblue;

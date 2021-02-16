@@ -10,7 +10,7 @@
 #include "sensor.h"
 
 // ======== comment this out for windows
-#include "visualiser.h"
+//#include "visualiser.h"
 
 enum Key {kblue, kred, kboth};
 
@@ -169,12 +169,12 @@ public:
   }
   
   // ========== comment this out for windows
-  void Render(SDL_Renderer *renderer);
+  //void Render(SDL_Renderer *renderer);
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)
   //			 | this is the index
-  Block blocks[4][32];
+  Block blocks[COLOURS][BLOCKSEACH];
   //         | this is the colour
   unsigned short colourNs[4]; // numbers of blocks stored of each colour
   
@@ -224,8 +224,8 @@ private:
   
   // Removes block from database - index from 0 to 127 looking at database as a 1D array
   void RemoveBlockDirect(unsigned short index) {
-      unsigned short colNum = index / 32;
-      for (int i = index % 32; i < colourNs[colNum] - 1; i++) {
+      unsigned short colNum = index / BLOCKSEACH;
+      for (int i = index % BLOCKSEACH; i < colourNs[colNum] - 1; i++) {
           blocks[colNum][i] = blocks[colNum][i + 1];
       }
       colourNs[colNum]--;
