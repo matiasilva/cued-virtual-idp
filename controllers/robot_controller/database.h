@@ -143,9 +143,15 @@ public:
   void receiveData();
 
   // sets own position value
+  void setMyPos(vec pos) {
+      myPos = pos;
+  }
+
+  // sets other robot position value
   void setOtherPos(vec pos) {
       otherPos = pos;
   }
+
 
   void printAll(Robot* _robot) {
       for (int i = 0; i < colourNs[question]; i++) {
@@ -171,8 +177,12 @@ private:
   SensorEmitter* em;
   SensorReceiver* rec;
 
-  // Location of other robot
+  // Location of this other robot
   vec otherPos;
+  vec myPos;
+
+  // Own colour
+  Colour ownCol;
 
   // Adds a block of unknown colour to the database
   void AddDunnoBlock(Block block){
@@ -195,8 +205,6 @@ private:
     printf("Question added at %f, %f\n", block.position.z, block.position.x);
     blocks[question][colourNs[question]++] = block;
 
-    // send block change through emitter
-    sendData(&block, addBlock);
   }
   // Removes a question from the database. !!! We currently are not doing anything about robots who have a question as their destination when that question is removed.
   void RemoveQuestion(unsigned short index){
@@ -207,7 +215,7 @@ private:
   }
   
   // Removes block from database - index from 0 to 127 looking at database as a 1D array
-  void RemoveBlock(unsigned short index) {
+  void RemoveBlockDirect(unsigned short index) {
       unsigned short colNum = index / 32;
       for (int i = index % 32; i < colourNs[colNum] - 1; i++) {
           blocks[colNum][i] = blocks[colNum][i + 1];

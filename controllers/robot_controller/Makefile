@@ -59,8 +59,8 @@ INCLUDE = -I"header.h database.h navigation.h state.h sensor.h scan.h test.h com
 
 ###
 ### ---- Linking options ----
-### if special linking flags are needed:
-LFLAGS =  -lSDL2
+### if special linking flags are needed: comment this out for windows
+#LFLAGS =  -lSDL2
 ###
 ### ---- Webots included libraries ----
 ### if you want to use the Webots C API in your C++ controller program:

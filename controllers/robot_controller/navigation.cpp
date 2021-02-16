@@ -72,6 +72,9 @@ void Navigation::Run(){
     Block robotBlock{ position, key, 0, 0, question };
     dataBase->sendData(&robotBlock, robotPos);
 
+    // set current robot position
+    dataBase->setMyPos(scan->ReadPosition());
+
     // Check receiver - only if not an InputState
     if (!dynamic_cast<InputState*>(stateManager->GetState())) {
         dataBase->receiveData();

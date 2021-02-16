@@ -13,6 +13,9 @@ DataBase::DataBase(Robot* _robot, int time_step){
     // initialises all sensors
     em = new SensorEmitter(_robot, "emitter");
     rec = new SensorReceiver(_robot, "receiver", time_step);
+
+	if (_robot->getName() == "skids") ownCol = red;
+	else ownCol = blue;
     
    	visualising = false;
    	
@@ -58,6 +61,7 @@ void DataBase::Got(bool iamred, vec position){
 }
 
 void DataBase::RemoveBlock(Colour colour, unsigned short index){
+	//sendData(&blocks[colour][index], removeBlock); // send signal to remove block from datanase
 	for(int b=index; b<colourNs[colour]-1; b++){
 		blocks[colour][b] = blocks[colour][b+1];
 	}
@@ -81,6 +85,8 @@ void DataBase::ColourAtPos(Colour colour, vec position){
 	if(nearN){ // is near at least one known block
 		unsigned short index = FindMin(nearN, near); // find known block closest to
 		blocks[colour][colourNs[colour]] = blocks[cs[index]][bs[index]];
+		blocks[colour][colourNs[colour]].blockColour = colour;
+		if (colour != ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
 		colourNs[colour]++;
 		RemoveBlock(cs[index], bs[index]);
 	}
@@ -246,6 +252,8 @@ int DataBase::FindByPosition(vec pos)
 
 void DataBase::ModifyBlockByPrimaryKey(Block* block, bool forceChange)
 {
+
+
 	// find block in database
     int found_index = FindByPrimaryKey(block->primaryKey);
 	if (found_index == -1) return; // block with primary key not in database
@@ -253,24 +261,30 @@ void DataBase::ModifyBlockByPrimaryKey(Block* block, bool forceChange)
 	Block block_db = blocks[(int)found_index / 32][found_index % 32];
 
 	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block.
-	if (forceChange || block_db.blockColour != block->blockColour) {
+	if (forceChange || (block_db.blockColour != block->blockColour && block->blockColour != dunno)) {
 		blocks[(int)found_index / 32][found_index % 32] = *block;
+		blocks[block->blockColour][colourNs[block->blockColour]] = *block; // Add block to new subarray
+		colourNs[block->blockColour]++;
+		RemoveBlock(block_db.blockColour, found_index % 32); // Remove block from previous colour subarray
 	}
 	
 }
 
 void DataBase::ModifyBlockByIndex(Block* block, int index, bool forceChange)
 {
-
 	Block block_db = blocks[(int)index / 32][index % 32];
 
 	// set foreign key and primary keys to match
 	blocks[(int)index / 32][index % 32].foreignKey = block->foreignKey;
 	block->primaryKey = block_db.primaryKey;
 
-	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block.
-	if (forceChange || block_db.blockColour != block->blockColour) {
+
+	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block to a colour that is either red or blue.
+	if (forceChange || (block_db.blockColour != block->blockColour && block->blockColour != dunno)) {
 		blocks[(int)index / 32][index % 32] = *block;
+		blocks[block->blockColour][colourNs[block->blockColour]] = *block; // Add block to new subarray
+		colourNs[block->blockColour]++;
+		RemoveBlock(block_db.blockColour, index % 32); // Remove block from previous colour subarray
 	}
 
 }
@@ -284,12 +298,12 @@ void DataBase::AddNewBlock(Block* block)
 	if ((col == red || col == blue) && colourNs[col] >= 4)
 	{
 		block->blockColour = question;
-		blocks[question][colourNs[col]] = *block;
+		blocks[question][colourNs[question]] = *block;
 	}
 	else{
 		blocks[col][colourNs[col]] = *block;
 	}
-	colourNs[col] = colourNs[col] + 1;
+	colourNs[col]++;
 
 }
 
@@ -314,6 +328,7 @@ void DataBase::unpackData(Block* block, double* data) {
 	block->blockColour = (Colour) * (data + 2);
 	block->primaryKey = (unsigned short int) * (data + 4); // note primary and foreign key swapped here - as reference robot is swapped
 	block->foreignKey = (unsigned short int) * (data + 3);
+
 }
 
 void DataBase::sendData(Block* block, Control command) {
@@ -323,6 +338,7 @@ void DataBase::sendData(Block* block, Control command) {
 
 	packData(block, data, command);
 	em->send(data);
+
 }
 
 void DataBase::receiveData() {
@@ -347,7 +363,8 @@ void DataBase::receiveData() {
 			if (keyExists) ModifyBlockByPrimaryKey(&block);
 			else {
 				ind = FindByPosition(block.position);
-
+				
+				
 				if (ind != -1) ModifyBlockByIndex(&block, ind);
 				else AddNewBlock(&block);
 			}
@@ -358,7 +375,7 @@ void DataBase::receiveData() {
 			// verify index
 			ind = FindByPosition(block.position);
 
-			if (ind != -1) RemoveBlock(ind);
+			if (ind != -1) RemoveBlockDirect(ind);
 			break;
 				// Record other robot position
 		case robotPos:
