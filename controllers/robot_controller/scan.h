@@ -10,6 +10,7 @@ public:
 	
 	vec ReadPosition();
 	double ReadBearing();
+	vec ReadOrientation();
 	float ReadLeftDistance();
 	float ReadRightDistance();
 	Colour ReadColour();

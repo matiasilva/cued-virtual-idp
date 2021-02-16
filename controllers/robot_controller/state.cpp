@@ -114,14 +114,14 @@ State *MovingToState::Run(){
 	float dLeft = nav->GetDistance(0);
 	float dRight = nav->GetDistance(1);
 	float expected = sqrt(delta.SqMag());
-	bool leftCons = fabs(expected - dLeft) < 0.07;
-	bool rightCons = fabs(expected - dRight) < 0.07;
-	int cons = leftCons + rightCons;
+	bool leftCons = fabs(expected - dLeft) < 0.1f;
+	bool rightCons = fabs(expected - dRight) < 0.1f;
+	int cons = (leftCons + rightCons)*(fabs(dLeft - dRight) < 0.05f);
 	if(cons){
 		if(cons == 2){
 			// we are looking at the block
-			nav->DBLogReading(true);
-			nav->EndStep(10, 10);
+			nav->DBLogReading(true, true);
+			nav->EndStep(5, 5);
 			return this;
 		}
 		// only one side is looking at the block
@@ -129,6 +129,9 @@ State *MovingToState::Run(){
 		return this;
 	}
 	// we aren't looking at the block
+	if(0.5*(dLeft + dRight) < 0.13){ // close to something
+		return new BackingState(nav);
+	}
 	nav->EndStep(0, 0);
 	return new FindingLostState(nav);
 }
@@ -145,10 +148,13 @@ State *FindingLostState::Run(){
 	float expected = sqrt(delta.SqMag());
 	float dLeft = nav->GetDistance(0);
 	float dRight = nav->GetDistance(1);
-	bool cons = (fabs(expected - dLeft) < 0.07) + (fabs(expected - dRight) < 0.07);
+	bool cons = ((fabs(expected - dLeft) < 0.06) + (fabs(expected - dRight) < 0.06))*(fabs(dLeft - dRight) < 0.05f);
 	double expectedBearing = delta.Bearing();
 	if(!cons){
-		if(turnTo >= limit) return nullptr;
+		if(turnTo >= limit){
+			nav->DestinationInvalid();
+			return nullptr;
+		}
 		if(turningRight){
 			if(MakePPMP(nav->GetBearing() - (expectedBearing - turnTo)) < 0){
 				turningRight = false;
@@ -178,10 +184,7 @@ GrabbingState::GrabbingState(Navigation *_nav) : State(_nav){
 	grabbing = false;
 }
 State *GrabbingState::Run(){
-	if(grabbing){
-		Colour blockColour = nav->ReadCamera();
-		if(nav->IAmRed() + 1 != (int)blockColour) return new BackingState(nav);
-				
+	if(grabbing){				
 		nav->SetArmAngle(0);
 		float newDist = 0.14f - (mPerStep * ++count);
 		bool done = false;
@@ -197,6 +200,8 @@ State *GrabbingState::Run(){
 		if(nav->GetDistance(0) < 0.08){
 			count = 0;
 			grabbing = true;
+			Colour blockColour = nav->ReadCamera();
+			if(nav->IAmRed() + 1 != (int)blockColour) return new BackingState(nav);
 			nav->EndStep(0, 0);
 		} else if(nav->GetDistance(0) > 0.15){
 			nav->EndStep(0, 0);
@@ -290,7 +295,7 @@ State *LoweringState::Run(){
 	}
 	nav->SetArmAngle(newAngle);
 	nav->EndStep(0, 0);
-	if(done) return new DroppingState(nav);
+	if(done) return nullptr;
 	return this;
 }
 
@@ -302,7 +307,7 @@ State *ReturningState::Run(){
 	if((nav->PositionInFront() - nav->GetInitialPosition()).SqMag() < 0.0004){
 		nav->EndStep(0, 0);
 		//printf("%c: Found.\n", names[iAmRed]);
-		return new LoweringState(nav);
+		return new DroppingState(nav);
 	}
 	
 	vec delta = nav->GetInitialPosition() - nav->GetPosition();
@@ -330,6 +335,7 @@ State *DroppingState::Run(){
 	}
 	nav->SetClawWidth(newDist);
 	nav->EndStep(0, 0);
+	nav->GetStateManager()->SetNextState(new LoweringState(nav));
 	if(done) return new BackingState(nav);
 	return this;
 }

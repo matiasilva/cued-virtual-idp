@@ -20,6 +20,6 @@ Don't use 'assert' for test code, 'assert(false)' just crashes the controller wi
 On windows, disable the visualiser by making changes in the following places:
 	Makefile lines 44, 54, 57
 	header.h line 19
-	database.h lines 13, 156
-	database.cpp lines 25, 35, 372
+	database.h lines 13, 164
+	database.cpp lines 28, 38, 390
 	navigation.h line 58

@@ -25,17 +25,17 @@ DataBase::DataBase(Robot* _robot, int time_step){
 void DataBase::StartVisualiser(){
 	
 	// ========= comment this out for windows
-	/*visualiser = new Visualiser(660, 660, this);
+	visualiser = new Visualiser(660, 660, this);
 	if(!visualiser->Init()){
 		printf("Visualiser error.\n");
 		return;
 	}
-	visualising = true;*/
+	visualising = true;
 }
 void DataBase::Step(){
 	
 	// =========== comment this our for windows
-	//if(visualising) visualiser->Loop();
+	if(visualising) visualiser->Loop();
 }
 
 void DataBase::Got(bool iamred, vec position){
@@ -68,12 +68,12 @@ void DataBase::RemoveBlock(Colour colour, unsigned short index){
 	colourNs[colour]--;
 }
 
-void DataBase::ColourAtPos(Colour colour, vec position){
+void DataBase::ColourAtPos(Colour colour, vec position, Key key){
 	double near[12];
 	Colour cs[12]; unsigned short bs[12];
 	unsigned short nearN = 0;
 	float sqDist;
-	for(int c=0; c<3; c++){ // only checks dunnos, reds and blues (not questions)
+	for(int c=0; c<4; c++){ // only checks dunnos, reds, blues and questions
 		for(int b=0; b<colourNs[c]; b++){
 			sqDist = (position - blocks[c][b].position).SqMag();
 			if(sqDist < BLOCK_WMAX*BLOCK_WMAX){ // reading is near a known block
@@ -89,13 +89,18 @@ void DataBase::ColourAtPos(Colour colour, vec position){
 		if (colour != ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
 		colourNs[colour]++;
 		RemoveBlock(cs[index], bs[index]);
+	} else { // is not near at least one known block
+		unsigned short int primaryKey = GenerateKey();
+		blocks[colour][colourNs[colour]] = {position, key, primaryKey, 0, colour};
+		if (colour != ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
+		colourNs[colour]++;
 	}
 }
 
-bool DataBase::LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key){
+bool DataBase::LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key, vec *newDest){
 	
 	float difference = fabs(distanceL - distanceR);
-	if(difference > 0.07) return true;
+	if(difference > 0.05) return true;
 	
 	float distance = (distanceL + distanceR)/2.0f;
 	vec deltaL = {(float)(distanceL * cos(bearing)), (float)(distanceL * sin(bearing))};
@@ -116,7 +121,7 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 	for(int c=0; c<3; c++){ // only checks dunnos, reds and blues (not questions)
 		for(int b=0; b<colourNs[c]; b++){
 			sqDist = (location - blocks[c][b].position).SqMag();
-			if(sqDist < BLOCK_WMAX*BLOCK_WMAX){ // reading is near a known block
+			if(sqDist < 4*BLOCK_WMAX*BLOCK_WMAX){ // reading is near a known block
 				cs[nearN] = (Colour)c; bs[nearN] = b;
 				near[nearN++] = sqDist;
 			}
@@ -124,10 +129,15 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 	}
 	if(nearN){ // is near at least one known block
 		unsigned short index = FindMin(nearN, near); // find known block closest to
-		//blocks[cs[index]][bs[index]] = {0.5 * (blocks[cs[index]][bs[index]].position + location), key}; // move position of block to average of previous thought position and new reading
-		blocks[cs[index]][bs[index]].position = 0.5 * (blocks[cs[index]][bs[index]].position + location);
+		vec newPos = 0.5 * (blocks[cs[index]][bs[index]].position + location);
+		blocks[cs[index]][bs[index]].position = newPos; // move position of block to average of previous thought position and new reading
 		blocks[cs[index]][bs[index]].seenBy = key;
 		printf("Block position updated at %f, %f\n", blocks[cs[index]][bs[index]].position.z, blocks[cs[index]][bs[index]].position.x);
+		if(newDest){
+			*newDest = newPos;
+			robotDestPos[key] = newPos;
+      		robotDest[key] = true;
+		}
 		return true; // tell robot that we agree with its reading
 	} else { // is not near a known block
 		// a pre-existing question is being seen?
@@ -136,7 +146,7 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 		float sqDist;
 		for(int q=0; q<colourNs[question]; q++){
 			sqDist = (location - blocks[question][q].position).SqMag();
-			if(sqDist < BLOCK_WMAX*BLOCK_WMAX){ // reading is near a pre-existing question
+			if(sqDist < 4*BLOCK_WMAX*BLOCK_WMAX){ // reading is near a pre-existing question
 				if(!canConfirm) return true; // can't confirm its a block, but have logged this question already
 					qs[nearN] = q;
 					near[nearN++] = sqDist;
@@ -144,10 +154,16 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 			}
 		if(nearN){ // not near a wall or a known block, but near a pre-existing question
 			if(!canConfirm) return true; // can't confirm its a block, but have logged this question already
-			unsigned short index = FindMin(nearN, near); // find pre-existing question closest to
-			AddDunnoBlock(blocks[question][qs[index]]); // turn question into
-			printf("Question confirmed at %f, %f : from %f, %f on bear %d\n", blocks[question][qs[index]].position.z, blocks[question][qs[index]].position.x, position.z, position.x, RD(bearing));
+			unsigned short index = FindMin(nearN, near); // find closest pre-existing question
+			AddDunnoBlock(blocks[question][qs[index]]); // turn question into dunno
+			vec newPos = blocks[question][qs[index]].position;
+			printf("Question confirmed at %f, %f : from %f, %f on bear %d\n", newPos.z, newPos.x, position.z, position.x, RD(bearing));
 			RemoveQuestion(qs[index]);             //    a known block
+			if(newDest){
+				*newDest = newPos;
+				robotDestPos[key] = newPos;
+				robotDest[key] = true;
+			}
 			return true; // tell robot that we agree with its reading
 		} else { // not near a wall, known block or pre-existing question
 			unsigned short int primaryKey = GenerateKey(); // generate primary key for question
@@ -161,47 +177,65 @@ bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
     //Debug();
     Colour colour = (iamred ? red : blue);
 	double sqdist;
+	int n;
     if(colourNs[colour]){
+      n = 0;
       double sqdists[colourNs[colour]];
+      unsigned int bs[colourNs[colour]];
       for(int i=0; i<colourNs[colour]; i++){
-        sqdists[i] = (blocks[colour][i].position - position).SqMag();
+        if(NotInSquare(blocks[colour][i].position)){
+        	sqdists[n] = (blocks[colour][i].position - position).SqMag();
+        	bs[n] = i;
+        	n++;
+        }
       }
-      unsigned short index = FindMin(colourNs[colour], sqdists);
-      *destination = blocks[colour][index].position;
+      unsigned short index = FindMin(n, sqdists);
+      *destination = blocks[colour][bs[index]].position;
       robotDestPos[iamred] = *destination;
       robotDest[iamred] = true;
       return true;
     } else if(colourNs[dunno]){
+      n = 0;
       double sqdists[colourNs[dunno]];
+      unsigned int bs[colourNs[dunno]];
       for(int i=0; i<colourNs[dunno]; i++){
-        sqdists[i] = (blocks[dunno][i].position - position).SqMag();
+        if(NotInSquare(blocks[dunno][i].position)){
+        	sqdists[n] = (blocks[dunno][i].position - position).SqMag();
+        	bs[n] = i;
+        	n++;
+        }
       }
-      unsigned short index = FindMin(colourNs[dunno], sqdists);
-      *destination = blocks[dunno][index].position;
+      unsigned short index = FindMin(n, sqdists);
+      *destination = blocks[dunno][bs[index]].position;
       robotDestPos[iamred] = *destination;
       robotDest[iamred] = true;
       return true;
     } else if(colourNs[question]){
+      n = 0;
       double sqdists[colourNs[question]];
+      unsigned int bs[colourNs[question]];
       for(int i=0; i<colourNs[question]; i++){
 		  vec pos = blocks[question][i].position;
-		  sqdist = (pos - position).SqMag();
-		  if (sqdist < 0.1*BLOCK_POS_UNCERTAINTY) {
-			  // ensures robot does not pick itself as the destination
-			  sqdist = INFINITY;
-			  // remove block - represents robot
-			  RemoveQuestion(i);
+		  if(NotInSquare(pos)){
+			  sqdist = (pos - position).SqMag();
+			  if (sqdist < 0.1*BLOCK_POS_UNCERTAINTY) {
+				  // ensures robot does not pick itself as the destination
+				  sqdist = INFINITY;
+				  // remove block - represents robot
+				  RemoveQuestion(i);
+			  } else if(pos.x < otherPos.x + BLOCK_POS_UNCERTAINTY && pos.x > otherPos.x - BLOCK_POS_UNCERTAINTY
+						&& pos.z < otherPos.z + BLOCK_POS_UNCERTAINTY && pos.z > otherPos.z - BLOCK_POS_UNCERTAINTY) {
+				  // ensures robot does not pick other robot as the destination
+				  sqdist = INFINITY;
+				  RemoveQuestion(i);
+			  }
+			  sqdists[n] = sqdist;
+			  bs[n] = i;
+			  n++;
 		  }
-		  else if (pos.x < otherPos.x + BLOCK_POS_UNCERTAINTY && pos.x > otherPos.x - BLOCK_POS_UNCERTAINTY
-			  && pos.z < otherPos.z + BLOCK_POS_UNCERTAINTY && pos.z > otherPos.z - BLOCK_POS_UNCERTAINTY) {
-			  // ensures robot does not pick other robot as the destination
-			  sqdist = INFINITY;
-			  RemoveQuestion(i);
-		  }
-		  sqdists[i] = sqdist;
       }
-      unsigned short index = FindMin(colourNs[question], sqdists);
-      *destination = blocks[question][index].position;
+      unsigned short index = FindMin(n, sqdists);
+      *destination = blocks[question][bs[index]].position;
       robotDestPos[iamred] = *destination;
       robotDest[iamred] = true;
       return true;
@@ -287,6 +321,14 @@ void DataBase::ModifyBlockByIndex(Block* block, int index, bool forceChange)
 		RemoveBlock(block_db.blockColour, index % 32); // Remove block from previous colour subarray
 	}
 
+}
+
+void DataBase::RemoveByPosition(vec position){
+	int index = FindByPosition(position);
+	
+	Block block_db = blocks[(int)index / 32][index % 32];
+
+	RemoveBlock(block_db.blockColour, index % 32); // Remove block from array
 }
 
 void DataBase::AddNewBlock(Block* block)
@@ -387,7 +429,7 @@ void DataBase::receiveData() {
 }
 
 // ========= comment this whole function out for windows
-/*
+
 void DataBase::Render(SDL_Renderer *renderer){
 	SDL_Rect rect;
 	
@@ -439,4 +481,3 @@ void DataBase::Render(SDL_Renderer *renderer){
 		SDL_RenderDrawLine(renderer, x + 10, y - 10, x - 10, y + 10);
 	}
 }
-*/

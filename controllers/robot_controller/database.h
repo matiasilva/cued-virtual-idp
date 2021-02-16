@@ -10,7 +10,7 @@
 #include "sensor.h"
 
 // ======== comment this out for windows
-//#include "visualiser.h"
+#include "visualiser.h"
 
 enum Key {kblue, kred, kboth};
 
@@ -39,9 +39,9 @@ public:
   //		- you are looking at/near a known block so we have modified our data according to your reading
   //		- you are looking at/near a question AND 'canConfirm' is 'true', so we have confirmed that question into a known block (colour dunno)
   //		- you are looking at/near a question AND 'canConfirm' is 'false', so we done nothing
-  bool LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key);
+  bool LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key, vec *newDest=nullptr);
   
-  void ColourAtPos(Colour colour, vec position);
+  void ColourAtPos(Colour colour, vec position, Key key);
   
   void Got(bool iamred, vec position);  
   void RemoveBlock(Colour colour, unsigned short index);
@@ -61,6 +61,12 @@ public:
     if(index >= colourNs[colour]) return false;
     *ret = blocks[colour][index].position;
     return true;
+  }
+  
+  bool NotInSquare(vec position){
+  	if(position.x < 0.8) return true;
+  	if(position.z < -0.8 || position.z > 0.8) return false;
+  	return true;
   }
   
   // returns whether the given vector position 'vec' lies within the arena
@@ -108,7 +114,9 @@ public:
   // #param: Pointer to Block type block (struct), Boolean forceChange which forces complete block modification, even if block colours are identical.
   //         integer index relating to the position of the block to be modified within the database. This is a direct positional value obtained by transforming the 2D blocks array into 1D.
   void ModifyBlockByIndex(Block* block, int index, bool forceChange = false);
-
+	
+	void RemoveByPosition(vec position);
+	
   // method directly assigns a new block to the database, assigning it to the correct category and generating its primary key
   // #param: Pointer to block struct to be added to the database.
   void AddNewBlock(Block* block);
@@ -161,7 +169,7 @@ public:
   }
   
   // ========== comment this out for windows
-  //void Render(SDL_Renderer *renderer);
+  void Render(SDL_Renderer *renderer);
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)

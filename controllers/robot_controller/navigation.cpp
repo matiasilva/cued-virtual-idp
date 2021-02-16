@@ -53,13 +53,25 @@ void Navigation::Got(){
 bool Navigation::DBGetDestination(){
 	return dataBase->GetDestination(iAmRed, position, &destination);
 }
-bool Navigation::DBLogReading(bool canConfirm){
-	return dataBase->LogReading(position, bearing, distances[0], distances[1], canConfirm, key);
+bool Navigation::DBLogReading(bool canConfirm, bool feedBackDest){
+	vec newDest;
+	vec *ptr = nullptr;
+	if(feedBackDest) ptr = &newDest;
+	bool ret = dataBase->LogReading(position, bearing, distances[0], distances[1], canConfirm, key, ptr);
+	if(feedBackDest) destination = *ptr;
+	return ret;
+}
+void Navigation::DestinationInvalid(){
+	dataBase->RemoveByPosition(destination);
 }
 
 Colour Navigation::ReadCamera(){
 	Colour col = scan->ReadColour();
-	dataBase->ColourAtPos(col, destination);
+	float dist = 0.5f*(distances[0] + distances[1]);
+	vec ori = scan->ReadOrientation();
+	printf("Colour %f away\n", dist);
+	
+	dataBase->ColourAtPos(col, position - dist*ori/sqrt(ori.SqMag()), key);
 	return col;
 }
 

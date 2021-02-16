@@ -230,6 +230,7 @@ public:
 	void Run(){
 		if(!state){
 			state = defaultState;
+			printf("State changed to default state.\n");
 		}
 		if(dynamic_cast<TemporaryState*>(state)){
 			if(nextState){

@@ -170,11 +170,7 @@ class SensorCompass: public Sensor
 protected:
     Compass* sensor_object;
     
-    /**
-        Intermediary "get" method which obtains orientation, as 2D vector (vec object), measured from compass.
-        #returns: vec object corresponding to world orientation.
-    */
-    vec getOrientation();
+    
     
 public:
     /**
@@ -197,6 +193,12 @@ public:
         #returns:  double corresponding to world orientation bearing - in degrees.
     */
     double getBearingDeg();
+    
+    /**
+        Intermediary "get" method which obtains orientation, as 2D vector (vec object), measured from compass.
+        #returns: vec object corresponding to world orientation.
+    */
+    vec getOrientation();
 };
 
 /**

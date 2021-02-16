@@ -16,7 +16,7 @@
 #include <webots/Receiver.hpp>
 
 // ========== comment this out for windows
-//#include <SDL2/SDL.h>
+#include <SDL2/SDL.h>
 // ==========
 
 #define PI 3.141592654

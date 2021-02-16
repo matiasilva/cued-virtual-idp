@@ -41,7 +41,8 @@ public:
   
   void Got();
   bool DBGetDestination();
-  bool DBLogReading(bool canConfirm);
+  bool DBLogReading(bool canConfirm, bool feedBackDest=false);
+  void DestinationInvalid();
   
   // main functions
   // runs the code to be called every step
@@ -55,7 +56,7 @@ public:
   
 private:
 	// =========== set this to false for windows
-  const bool visualiserActive = false;
+  const bool visualiserActive = true;
 
   Robot *robot;
   DataBase *dataBase;

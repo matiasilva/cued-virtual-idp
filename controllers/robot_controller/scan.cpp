@@ -18,6 +18,9 @@ vec Scan::ReadPosition(){
 double Scan::ReadBearing(){
 	return compass->getBearing();
 }
+vec Scan::ReadOrientation(){
+	return compass->getOrientation();
+}
 
 float Scan::ReadLeftDistance(){
 	return dsLeft->getDistance();
