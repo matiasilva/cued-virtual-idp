@@ -25,7 +25,8 @@ DataBase::DataBase(Robot* _robot, int time_step){
 void DataBase::StartVisualiser(){
 	
 	// ========= comment this out for windows
-	/*visualiser = new Visualiser(660, 660, this);
+	/*
+	visualiser = new Visualiser(660, 660, this);
 	if(!visualiser->Init()){
 		printf("Visualiser error.\n");
 		return;
@@ -175,8 +176,13 @@ bool DataBase::LogReading(vec position, double bearing, float distanceL, float d
 	}
 }
 
+bool DataBase::NotDestOf(bool isred, vec position){
+	if(!robotDest[isred]) return true;
+	return ((robotDestPos[isred] - position).SqMag() > BLOCK_WMAX*BLOCK_WMAX);
+}
+
 bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
-    //Debug();
+    Debug();
     Colour colour = (iamred ? red : blue);
 	double sqdist;
 	int n;
@@ -185,8 +191,9 @@ bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
       double sqdists[colourNs[colour]];
       unsigned int bs[colourNs[colour]];
       for(int i=0; i<colourNs[colour]; i++){
-        if(NotInSquare(blocks[colour][i].position)){
-        	sqdists[n] = (blocks[colour][i].position - position).SqMag();
+      	vec blockPos = blocks[colour][i].position;
+        if(NotInSquare(blockPos) && NotDestOf(!iamred, blockPos)){
+        	sqdists[n] = (blockPos - position).SqMag();
         	bs[n] = i;
         	n++;
         }
@@ -201,8 +208,8 @@ bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
       double sqdists[colourNs[dunno]];
       unsigned int bs[colourNs[dunno]];
       for(int i=0; i<colourNs[dunno]; i++){
-        if(NotInSquare(blocks[dunno][i].position)){
-        	sqdists[n] = (blocks[dunno][i].position - position).SqMag();
+        vec blockPos = blocks[dunno][i].position;
+        if(NotInSquare(blockPos) && NotDestOf(!iamred, blockPos)){
         	bs[n] = i;
         	n++;
         }
@@ -217,19 +224,17 @@ bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
       double sqdists[colourNs[question]];
       unsigned int bs[colourNs[question]];
       for(int i=0; i<colourNs[question]; i++){
-		  vec pos = blocks[question][i].position;
-		  if(NotInSquare(pos)){
-			  sqdist = (pos - position).SqMag();
-			  if (sqdist < 0.1*BLOCK_POS_UNCERTAINTY) {
-				  // ensures robot does not pick itself as the destination
-				  sqdist = INFINITY;
-				  // remove block - represents robot
+		  vec blockPos = blocks[question][i].position;
+          if(NotInSquare(blockPos) && NotDestOf(!iamred, blockPos)){
+			  sqdist = (blockPos - position).SqMag();
+			  if(sqdist < 0.1*BLOCK_POS_UNCERTAINTY) {
 				  RemoveQuestion(i);
-			  } else if(pos.x < otherPos.x + BLOCK_POS_UNCERTAINTY && pos.x > otherPos.x - BLOCK_POS_UNCERTAINTY
-						&& pos.z < otherPos.z + BLOCK_POS_UNCERTAINTY && pos.z > otherPos.z - BLOCK_POS_UNCERTAINTY) {
+				  continue;
+			  } else if(blockPos.x < otherPos.x + BLOCK_POS_UNCERTAINTY && blockPos.x > otherPos.x - BLOCK_POS_UNCERTAINTY
+						&& blockPos.z < otherPos.z + BLOCK_POS_UNCERTAINTY && blockPos.z > otherPos.z - BLOCK_POS_UNCERTAINTY) {
 				  // ensures robot does not pick other robot as the destination
-				  sqdist = INFINITY;
 				  RemoveQuestion(i);
+				  continue;
 			  }
 			  sqdists[n] = sqdist;
 			  bs[n] = i;

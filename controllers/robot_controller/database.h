@@ -190,6 +190,7 @@ private:
   
   bool robotDest[2];
   vec robotDestPos[2];
+  bool NotDestOf(bool isred, vec position);
   
   // Communication sensors
   SensorEmitter* em;

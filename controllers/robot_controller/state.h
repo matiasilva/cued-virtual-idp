@@ -127,7 +127,7 @@ public:
 private:
 	bool turningRight; // which way are we wiggling
 	double turnTo; // how far out are we wiggling to
-	const double limit = 0.24f;
+	const double limit = 0.16f;
 };
 
 class GrabbingState : public State {
@@ -156,7 +156,7 @@ private:
 	double turnTo; // how far out are we wiggling to
 	double target;
 	bool toTarget;
-	const double limit = 0.24f;
+	const double limit = 0.16f;
 };
 
 class PickingUpState : public State {

@@ -187,6 +187,7 @@ State *FindingLostState::Run(){
 		}
 		return this;
 	} else {
+		nav->DBLogReading(true, true);
 		nav->EndStep(0, 0);
 		return new MovingToState(nav);
 	}
