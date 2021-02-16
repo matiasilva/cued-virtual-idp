@@ -101,6 +101,17 @@ State *MovingToState::Run(){
 		return new GrabbingState(nav);
 	}
 	
+	// are we close to the other robot - if that is the case, back away for a few steps
+	static int steps = 0;
+	if ((nav->GetPosition() - nav->GetOtherPos()).SqMag() <= BLOCK_POS_UNCERTAINTY*1.6 || steps != 0) {
+		// Set robot to back away while turning - hence getting path away from other robot
+		nav->EndStep(-5, -3);
+		if (steps == 100) steps = 0;
+		else steps++;
+		return this;
+
+	}
+	
 	// are we looking in the right direction?
 	vec delta = nav->GetDestination() - nav->GetPosition();
 	double targetBearing = delta.Bearing();

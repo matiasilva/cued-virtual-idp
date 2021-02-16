@@ -418,8 +418,8 @@ void DataBase::receiveData() {
 			if (keyExists) ModifyBlockByPrimaryKey(&block);
 			else {
 				ind = FindByPosition(block.position);
-				
-				
+
+
 				if (ind != -1) ModifyBlockByIndex(&block, ind);
 				else AddNewBlock(&block);
 			}
@@ -432,7 +432,7 @@ void DataBase::receiveData() {
 
 			if (ind != -1) RemoveBlockDirect(ind);
 			break;
-				// Record other robot position
+			// Record other robot position
 		case robotPos:
 			otherPos = block.position;
 			break;

@@ -28,6 +28,7 @@ public:
   DataBase *GDB(){ return dataBase; }
   vec GetPosition(){ return position; }
   vec GetDestination(){ return destination; }
+  vec GetOtherPos() { return dataBase->getOtherPos(); }
   float GetDistance(int which){ return distances[which]; }
   Colour ReadCamera();
   void SetBearing(double newBearing){ bearing = newBearing; }

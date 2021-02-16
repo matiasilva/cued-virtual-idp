@@ -51,7 +51,7 @@ void Navigation::Got(){
 }
 
 bool Navigation::DBGetDestination(){
-	return dataBase->GetDestination(iAmRed, position, &destination);
+    return dataBase->GetDestination(iAmRed, position, &destination);
 }
 bool Navigation::DBLogReading(bool canConfirm, bool feedBackDest){
 	vec newDest;
@@ -107,12 +107,11 @@ void Navigation::SetClawWidth(float width){
 
 void Navigation::EndStep(float leftSpeed, float rightSpeed){
     //printf("%c: state is %d; vs = %f, %f\n", names[iAmRed], state, leftSpeed, rightSpeed);
-    
     motors[leftWheel]->setVelocity(leftSpeed);
     motors[rightWheel]->setVelocity(rightSpeed);
-    
+
     // integrates the wheel velocities to precict the change in orientation
-    bearing -= TURN_FACTOR*leftSpeed*timeStep/2000;
-    bearing += TURN_FACTOR*rightSpeed*timeStep/2000;
+    bearing -= TURN_FACTOR * leftSpeed * timeStep / 2000;
+    bearing += TURN_FACTOR * rightSpeed * timeStep / 2000;
     bearing = MakePPMP(bearing);
 }

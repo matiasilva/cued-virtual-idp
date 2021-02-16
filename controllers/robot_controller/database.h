@@ -160,6 +160,16 @@ public:
       otherPos = pos;
   }
 
+  // sets own position value
+  vec getMyPos() {
+      return myPos;
+  }
+
+  // sets other robot position value
+  vec getOtherPos() {
+      return otherPos;
+  }
+
 
   void printAll(Robot* _robot) {
       for (int i = 0; i < colourNs[question]; i++) {
@@ -188,6 +198,9 @@ private:
   // Location of this other robot
   vec otherPos;
   vec myPos;
+
+  // Destination of other robot
+  vec otherDest;
 
   // Own colour
   Colour ownCol;
