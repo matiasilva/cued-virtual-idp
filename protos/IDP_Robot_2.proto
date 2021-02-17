@@ -48,7 +48,7 @@ Robot {
       name "ds_left"
       lookupTable [
         0 0 0
-        4 4 0
+        4 4 0.1
       ]
     }
     DEF DS_RIGHT DistanceSensor {
@@ -69,10 +69,11 @@ Robot {
       name "ds_right"
       lookupTable [
         0 0 0
-        4 4 0
+        4 4 0.1
       ]
     }
     DEF GPS_ GPS {
+    accuracy 0.01
     }
     DEF COMPASS Compass {
       translation 0 0.085 0.05
