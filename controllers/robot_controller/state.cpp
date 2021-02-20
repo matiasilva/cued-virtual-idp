@@ -6,6 +6,29 @@
 
 #include "state.h"
 
+void StateManager::Run(){
+	if(!defaultState) printf("Default state has gone!n");
+	if(!state){
+		state = defaultState;
+		printf("%c: State changed to default state.\n", nav->GetC());
+	}
+	if(dynamic_cast<TemporaryState*>(state)){
+		if(nextState){
+			if(state != defaultState) delete state;
+			state = nextState;
+			nextState = nullptr;
+		}
+	}
+	State *nextStepState = state->Run();
+	if(nextStepState != state){
+	if(state != defaultState) delete state;
+		state = nextStepState;
+	}
+}
+
+
+
+
 DoNothingState::DoNothingState(Navigation *_nav) : TemporaryState(_nav){
 	printf("%c: State changed to 'DoNothingState'\n", nav->GetC());
 }
@@ -17,10 +40,7 @@ State *DoNothingState::Run(){
 
 State *DefaultState::Run(){
 	if(!nav->DBGetDestination()){ // no destination to be given
-		if(!nav->DBLogReading(true)){
-			nav->EndStep(0, 0);
-			return new DCheckingState(nav);
-		}
+		nav->DBLogReading(true);
 		nav->EndStep(-1, 1); // rotate slowly to scan for blocks
 		return this;
 	}

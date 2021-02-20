@@ -62,7 +62,7 @@ bool Navigation::DBLogReading(bool canConfirm, bool feedBackDest){
 	return ret;
 }
 void Navigation::DestinationInvalid(){
-	dataBase->RemoveByPosition(destination);
+	dataBase->RemoveByPosition(destination, true, iAmRed);
 }
 
 Colour Navigation::ReadCamera(){

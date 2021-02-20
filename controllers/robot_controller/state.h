@@ -9,25 +9,6 @@
 #include "header.h"
 #include "navigation.h"
 
-// state's run function is called
-// it executes code for this step
-// returns pointer to next state, either itself, another or 'nullptr' to go back to the default state
-
-// Current state system states
-// 'DefaultState':			=Temporary State= Asking the database for a destination. Will switch to 'movingTo' upon receiving one.
-//							Otherwise will turn slowly, scanning information for the database
-// 'DCheckingState':		Moving straight forwards from a remembered initial position. Re-calibrates bearing
-//							after 'dCTime' seconds, then goes back to 'def'
-// 'InitialScanState':		Scans a bit of 90 degrees downwards, logging questions into the database
-//							('canConfirm' = 'false'). Switches to 'def' when finished
-// 'MovingToState':			Turns towards, then moves towards destination. Will switch to 'findingLost' if
-//							distances sensor reading becomes unexpected
-// 'FindingLostState':		Wiggles left and right to increasing angles until distance sensor reads distance
-//							to destination !!! does not have a way of getting out of this is if it never reads
-//							the right thing
-// 'DoNothingState':		=Temporary State= Does nothing.
-// 'WaitState(float time)':	Waits for 'time' seconds
-
 // ----- States -----
 
 // parent class
@@ -46,7 +27,7 @@ protected:
 	Navigation *nav;
 };
 
-// parent class for temporary states
+// parent class for temporary states, these remain active until there is a state in the queue to switch to
 class TemporaryState : public State {
 public:
 	TemporaryState(Navigation *_nav) : State(_nav) {}
@@ -81,6 +62,7 @@ public:
 
 // ----- Normal states -----
 
+// waits a number of seconds given as an initialiser parameter
 class WaitState : public State {
 public:
 	WaitState(Navigation *_nav, float _time);
@@ -92,6 +74,7 @@ private:
 	int stepsLeft;
 };
 
+// double checks bearing reading by moving forward and comparing GPS reading before and after
 class DCheckingState : public State {
 public:
 	DCheckingState(Navigation *_nav);
@@ -104,6 +87,7 @@ private:
 	vec startPos; // position at start of double check
 };
 
+// does an initial scan of the arena
 class InitialScanState : public InputState {
 public:
 	InitialScanState(Navigation *_nav);
@@ -111,6 +95,7 @@ public:
 	State *Run() override;
 };
 
+// moves toward destination location as long as it can see the block at the location, feeds readings back to database to update destination position
 class MovingToState : public State {
 public:
 	MovingToState(Navigation *_nav);
@@ -118,6 +103,7 @@ public:
 	State *Run() override;
 };
 
+// wiggles back and forth, looking for a block at an expected distance away
 class FindingLostState : public State {
 public:
 	FindingLostState(Navigation *_nav);
@@ -130,6 +116,7 @@ private:
 	const double limit = 0.16f;
 };
 
+// evaluates colour of block in front, if there is one, and closes claw around the block
 class GrabbingState : public State {
 public:
 	GrabbingState(Navigation *_nav);
@@ -144,6 +131,7 @@ private:
 	bool grabbing;
 };
 
+// wiggles back and forth looking for a block right in front of it
 class FindingCloseState : public State {
 public:
 	FindingCloseState(Navigation *_nav);
@@ -159,6 +147,7 @@ private:
 	const double limit = 0.16f;
 };
 
+// raises arm once block is grabbed in claw
 class PickingUpState : public State {
 public:
 	PickingUpState(Navigation *_nav);
@@ -172,6 +161,7 @@ private:
 	unsigned int count;
 };
 
+// lowers arm
 class LoweringState : public State {
 public:
 	LoweringState(Navigation *_nav);
@@ -185,6 +175,7 @@ private:
 	unsigned int count;
 };
 
+// moves back to the starting square to deposit a collected block
 class ReturningState : public State {
 public:
 	ReturningState(Navigation *_nav);
@@ -192,6 +183,7 @@ public:
 	State *Run() override;
 };
 
+// releases claw
 class DroppingState : public State {
 public:
 	DroppingState(Navigation *_nav);
@@ -205,6 +197,7 @@ private:
 	unsigned int count;
 };
 
+// reverses a short distance
 class BackingState : public State {
 public:
 	BackingState(Navigation *_nav);
@@ -220,6 +213,7 @@ private:
 
 // ----- State Manager -----
 
+// manages state objects, the state queue and progression between states
 class StateManager {
 public:
 	StateManager(Navigation *_nav){
@@ -230,25 +224,8 @@ public:
 	}
 	~StateManager(){}
 	
-	void Run(){
-		if(!defaultState) printf("Default state has gone!n");
-		if(!state){
-			state = defaultState;
-			printf("State changed to default state.\n");
-		}
-		if(dynamic_cast<TemporaryState*>(state)){
-			if(nextState){
-				if(state != defaultState) delete state;
-				state = nextState;
-				nextState = nullptr;
-			}
-		}
-		State *nextStepState = state->Run();
-		if(nextStepState != state){
-			if(state != defaultState) delete state;
-			state = nextStepState;
-		}
-	}
+	// runs the current state saves returned state object for next step
+	void Run();
 	
 	// Forces change of state to '_state'.
 	// Note: if '_state' is a temporary state and 'nextState' isn't a 'nullptr', the state will be immediately switched to 'nextState'.

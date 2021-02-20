@@ -44,6 +44,7 @@ void sendData(Block* block, SensorEmitter* em) {
 
 void receiveData(DataBase* database, SensorReceiver* rec) {
 	while (!rec->getQueueEmpty()) {
+		printf("Data received.\n");
 		// receive data from queue
 		Block block;
 		unpackData(&block, rec->getData());
@@ -54,9 +55,8 @@ void receiveData(DataBase* database, SensorReceiver* rec) {
 
 		if (keyExists) database->ModifyBlockByPrimaryKey(&block);
 		else {
-			int ind = database->FindByPosition(block.position);
-
-			if (ind != -1) database->ModifyBlockByIndex(&block, ind);
+			Loc loc;
+			if(database->FindByPosition(block.position, &loc)) database->ModifyBlockByIndex(&block, loc);
 			else database->AddNewBlock(&block);
 		}
 	}

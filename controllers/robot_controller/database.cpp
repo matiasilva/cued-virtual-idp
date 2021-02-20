@@ -25,19 +25,19 @@ DataBase::DataBase(Robot* _robot, int time_step){
 void DataBase::StartVisualiser(){
 	
 	// ========= comment this out for windows
-	/*
+	
 	visualiser = new Visualiser(660, 660, this);
 	if(!visualiser->Init()){
 		printf("Visualiser error.\n");
 		return;
 	}
 	visualising = true;
-	*/
+	
 }
 void DataBase::Step(){
 	
 	// =========== comment this our for windows
-	//if(visualising) visualiser->Loop();
+	if(visualising) visualiser->Loop();
 }
 
 void DataBase::Got(bool iamred, vec position){
@@ -58,17 +58,18 @@ void DataBase::Got(bool iamred, vec position){
 	if(nearN){ // is near at least one known block
 		unsigned short index = FindMin(nearN, near);
 		Debug();
-		RemoveBlock(col, index);
+		RemoveBlock({col, index});
 		printf("Block of colour %d, index %d removed.\n", (int)col, index);
 	}
 }
 
-void DataBase::RemoveBlock(Colour colour, unsigned short index){
-	//sendData(&blocks[colour][index], removeBlock); // send signal to remove block from datanase
-	for(int b=index; b<colourNs[colour]-1; b++){
-		blocks[colour][b] = blocks[colour][b+1];
+// Removes block from database
+void DataBase::RemoveBlock(Loc loc){
+	if(loc.b >= colourNs[(int)loc.c]){ printf("Tried to remove non-existent block.\n"); return; }
+	for(int i=loc.b; i<colourNs[(int)loc.c]-1; i++) {
+		blocks[(int)loc.c][i] = blocks[(int)loc.c][i+1];
 	}
-	colourNs[colour]--;
+	colourNs[(int)loc.c]--;
 }
 
 void DataBase::ColourAtPos(Colour colour, vec position, Key key){
@@ -91,7 +92,7 @@ void DataBase::ColourAtPos(Colour colour, vec position, Key key){
 		blocks[colour][colourNs[colour]].blockColour = colour;
 		if (colour == ownCol)sendData(&blocks[colour][colourNs[colour]], addBlock); // send block info through emitter if colour not own robot's - avoids integrity errors
 		colourNs[colour]++;
-		RemoveBlock(cs[index], bs[index]);
+		RemoveBlock({cs[index], bs[index]});
 	} else { // is not near at least one known block
 		unsigned short int primaryKey = GenerateKey();
 		blocks[colour][colourNs[colour]] = {position, key, primaryKey, 0, colour};
@@ -223,28 +224,36 @@ bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
       n = 0;
       double sqdists[colourNs[question]];
       unsigned int bs[colourNs[question]];
+      unsigned int toRemove[colourNs[question]];
+      unsigned int toRemoveN = 0;
       for(int i=0; i<colourNs[question]; i++){
 		  vec blockPos = blocks[question][i].position;
           if(NotInSquare(blockPos) && NotDestOf(!iamred, blockPos)){
 			  sqdist = (blockPos - position).SqMag();
 			  if(sqdist < 0.1*BLOCK_POS_UNCERTAINTY) {
-				  RemoveQuestion(i);
-				  continue;
+				  toRemove[toRemoveN++] = i;
 			  } else if(blockPos.x < otherPos.x + BLOCK_POS_UNCERTAINTY && blockPos.x > otherPos.x - BLOCK_POS_UNCERTAINTY
 						&& blockPos.z < otherPos.z + BLOCK_POS_UNCERTAINTY && blockPos.z > otherPos.z - BLOCK_POS_UNCERTAINTY) {
 				  // ensures robot does not pick other robot as the destination
-				  RemoveQuestion(i);
-				  continue;
+				  toRemove[toRemoveN++] = i;
+			  } else {
+				  sqdists[n] = sqdist;
+				  bs[n] = i;
+				  n++;
 			  }
-			  sqdists[n] = sqdist;
-			  bs[n] = i;
-			  n++;
 		  }
       }
+      
       unsigned short index = FindMin(n, sqdists);
       *destination = blocks[question][bs[index]].position;
       robotDestPos[iamred] = *destination;
       robotDest[iamred] = true;
+      
+      // removing invalid quesions:
+      for(int i=toRemoveN-1; i>=0; i--){
+      	RemoveQuestion(i);
+      }
+      
       return true;
     } else {
       robotDest[iamred] = false;
@@ -252,119 +261,105 @@ bool DataBase::GetDestination(bool iamred, vec position, vec *destination){
     }
 }
 
-short unsigned int DataBase::GenerateKey()
-{
+short unsigned int DataBase::GenerateKey(){
 	static unsigned int previous_key = 0; // create static var to store previous key value - such that no primary key is ever repeated
 	previous_key++; // No overflow errors occur until previous_key = 65535 - well beyond the possible keys used in this program.
 	return previous_key;
 }
 
-bool DataBase::VerifyPrimaryKey(unsigned short int pkey)
-{
-	bool found = false;
-	for (int c=0; c<4; c++) {
-		for(int b=0; b<colourNs[c]; b++){
-			if (blocks[c][b].primaryKey == pkey) found = true;
+bool DataBase::VerifyPrimaryKey(unsigned short int pkey){
+	for(unsigned int c=0; c<4; c++) {
+		for(unsigned int b=0; b<colourNs[c]; b++){
+			if (blocks[c][b].primaryKey == pkey) return true;
 		}
 	}
-	return found;
+	return false;
 }
 
-int DataBase::FindByPrimaryKey(unsigned short int pkey)
-{
-	int index = -1;
-	for (int c=0; c<4; c++) {
-		for(int b=0; b<colourNs[c]; b++){
-			if (blocks[c][b].primaryKey == pkey) index = c*BLOCKSEACH + b;
+bool DataBase::FindByPrimaryKey(unsigned short int pkey, Loc *ret){
+	for(unsigned int c=0; c<4; c++){
+		for(unsigned int b=0; b<colourNs[c]; b++){
+			if(blocks[c][b].primaryKey == pkey){
+				*ret = {(Colour)c, b};
+				return true;
+			}
 		}
 	}
-	return index;
+	return false;
 }
 
-int DataBase::FindByPosition(vec pos)
-{
+bool DataBase::FindByPosition(vec pos, Loc *ret){
 	vec pos_db;
-	for (int c=0; c<4; c++) {
-		for(int b=0; b<colourNs[c]; b++){
+	for(unsigned int c=0; c<4; c++){
+		for(unsigned int b=0; b<colourNs[c]; b++){
 			pos_db = blocks[c][b].position;
 			// If both x' and y' (new block) correspond to existing x, y with uncertainty BLOCK_POS_UNCERTAINTY u ( (x - u) < x' < (x + u), (y - u) < y' < (y + u)), blocks are deemed equal.
 			if(	pos.x < pos_db.x + BLOCK_POS_UNCERTAINTY && pos.x > pos_db.x - BLOCK_POS_UNCERTAINTY
-				&& pos.z < pos_db.z + BLOCK_POS_UNCERTAINTY && pos.z > pos_db.z - BLOCK_POS_UNCERTAINTY) return c*BLOCKSEACH + b;
+				&& pos.z < pos_db.z + BLOCK_POS_UNCERTAINTY && pos.z > pos_db.z - BLOCK_POS_UNCERTAINTY){
+				*ret = {(Colour)c, b};
+				return true;
+			}
 		}
 	}
-	return -1;
-
+	return false;
 }
 
-void DataBase::ModifyBlockByPrimaryKey(Block* block, bool forceChange)
-{
-
-
+void DataBase::ModifyBlockByPrimaryKey(Block* block, bool forceChange){
 	// find block in database
-    int found_index = FindByPrimaryKey(block->primaryKey);
-	if (found_index == -1) return; // block with primary key not in database
-
-	Block block_db = blocks[(int)found_index / BLOCKSEACH][found_index % BLOCKSEACH];
+    Loc found_location;;
+	if(!FindByPrimaryKey(block->primaryKey, &found_location)) return; // block with primary key not in database
 
 	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block.
-	if (forceChange || (block_db.blockColour != block->blockColour && block->blockColour != dunno)) {
-		blocks[(int)found_index / BLOCKSEACH][found_index % BLOCKSEACH] = *block;
+	if(forceChange || (found_location.c != block->blockColour && block->blockColour != dunno)) {
+		blocks[found_location.c][found_location.b] = *block;
 		blocks[block->blockColour][colourNs[block->blockColour]] = *block; // Add block to new subarray
 		colourNs[block->blockColour]++;
-		RemoveBlock(block_db.blockColour, found_index % BLOCKSEACH); // Remove block from previous colour subarray
+		RemoveBlock(found_location); // Remove block from previous colour subarray
 	}
 	
 }
 
-void DataBase::ModifyBlockByIndex(Block* block, int index, bool forceChange)
-{
-	Block block_db = blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH];
-
+void DataBase::ModifyBlockByIndex(Block* block, Loc loc, bool forceChange){
+	Block block_db = blocks[(int)loc.c][loc.b];
+	
 	// set foreign key and primary keys to match
-	blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH].foreignKey = block->foreignKey;
+	blocks[(int)loc.c][loc.b].foreignKey = block->foreignKey;
 	block->primaryKey = block_db.primaryKey;
-
-
+	
 	// replace block in database, only if forceChange is set to true, or if colour parameters do not match - representing a relevant change in value for the block to a colour that is either red or blue.
-	if (forceChange || (block_db.blockColour != block->blockColour && block->blockColour != dunno)) {
-		blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH] = *block;
+	if(forceChange || (loc.c != block->blockColour && block->blockColour != dunno)) {
+		blocks[(int)loc.c][loc.b] = *block;
 		blocks[block->blockColour][colourNs[block->blockColour]] = *block; // Add block to new subarray
 		colourNs[block->blockColour]++;
-		RemoveBlock(block_db.blockColour, index % BLOCKSEACH); // Remove block from previous colour subarray
+		RemoveBlock(loc); // Remove block from previous colour subarray
 	}
-
 }
 
-void DataBase::RemoveByPosition(vec position){
-	int index = FindByPosition(position);
-	if(index == -1){
+void DataBase::RemoveByPosition(vec position, bool isDest, bool isred){
+	Loc loc;
+	if(!FindByPosition(position, &loc)){
 		printf("Tried to remove non-existent block.\n");
 		return;
 	}
-	printf("Removing block by position: index %d.\n", index);
-	Block block_db = blocks[(int)index / BLOCKSEACH][index % BLOCKSEACH];
-	printf("Block: %d, %d\n", (int)index / BLOCKSEACH, index % BLOCKSEACH);
-	printf("Blocks of colour %d: %d\n", (int)index / BLOCKSEACH, colourNs[(int)index / BLOCKSEACH]);
-	block_db.blockColour = (Colour)(index / BLOCKSEACH);
-	RemoveBlock(block_db.blockColour, index % BLOCKSEACH); // Remove block from array
+	printf("Removing block by position: colour %d, index %d.\n", (int)loc.c, loc.b);
+	printf("Blocks of colour %d: %d\n", (int)loc.c, colourNs[(int)loc.c]);
+	RemoveBlock(loc); // Remove block from array
+	if(isDest) robotDest[isred] = false;
 }
 
-void DataBase::AddNewBlock(Block* block)
-{
+void DataBase::AddNewBlock(Block* block){
 	Colour col = block->blockColour;
 	unsigned short int primaryKey = GenerateKey(); // generate primary key for block
 	block->primaryKey = primaryKey;
 
-	if ((col == red || col == blue) && colourNs[col] >= 4)
-	{
+	if((col == red || col == blue) && colourNs[col] >= 4){
 		block->blockColour = question;
 		blocks[question][colourNs[question]] = *block;
-	}
-	else{
+		colourNs[question]++;
+	} else {
 		blocks[col][colourNs[col]] = *block;
+		colourNs[col]++;
 	}
-	colourNs[col]++;
-
 }
 
 // Communication methods
@@ -405,7 +400,7 @@ void DataBase::receiveData() {
 	double* p = rec->getData();
 	while (!rec->getQueueEmpty() || p != NULL) {
 		bool keyExists = false;
-		int ind;
+		Loc loc;
 		// receive data from queue
 		Block block;
 		unpackData(&block, p);
@@ -422,10 +417,7 @@ void DataBase::receiveData() {
 
 			if (keyExists) ModifyBlockByPrimaryKey(&block);
 			else {
-				ind = FindByPosition(block.position);
-
-
-				if (ind != -1) ModifyBlockByIndex(&block, ind);
+				if(FindByPosition(block.position, &loc)) ModifyBlockByIndex(&block, loc);
 				else AddNewBlock(&block);
 			}
 			break;
@@ -433,9 +425,7 @@ void DataBase::receiveData() {
 		case removeBlock:
 
 			// verify index
-			ind = FindByPosition(block.position);
-
-			if (ind != -1) RemoveBlockDirect(ind);
+			if(FindByPosition(block.position, &loc)) RemoveBlock(loc);
 			break;
 			// Record other robot position
 		case robotPos:
@@ -447,7 +437,7 @@ void DataBase::receiveData() {
 }
 
 // ========= comment this whole function out for windows
-/*
+
 void DataBase::Render(SDL_Renderer *renderer){
 	SDL_Rect rect;
 	
@@ -522,4 +512,3 @@ void DataBase::Render(SDL_Renderer *renderer){
 	rect = {x - 14, y - 14, 28, 28};
 	SDL_RenderDrawRect(renderer, &rect);
 }
-*/

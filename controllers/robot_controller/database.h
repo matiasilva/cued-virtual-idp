@@ -10,13 +10,21 @@
 #include "sensor.h"
 
 // ======== comment this out for windows
-//#include "visualiser.h"
+#include "visualiser.h"
 
+// colour identifies for which robot has identified a block
 enum Key {kblue, kred, kboth};
 
+// struct containing the information about a location in the database, which is a 2-d array - c moves in 1st dimension, b in the 2nd
+struct Loc {
+	Colour c;
+	unsigned int b;
+};
+
+// struct containing all information about a block that is stored in the database
 struct Block {
 	vec position;
-	Key seenBy;
+	Key seenBy; // which robot has seen the robot
     short unsigned int primaryKey; // Block primary key (defined on current robot)
     short unsigned int foreignKey; // Block foreign key (defined on other robot)
     Colour blockColour; // Known block colour
@@ -27,7 +35,10 @@ public:
   DataBase(Robot* _robot, int time_step);
   ~DataBase(){}
   
+  // tells the visualiser a time step has taken place, so it creates and renders the next the image
   void Step();
+  
+  // creates and initialises visualiser object, making visualiser window appear on screen
   void StartVisualiser();
   
   // Compares a distance sensor reading of 'distance' taken from 'position' at bearing '*bearing'
@@ -41,10 +52,14 @@ public:
   //		- you are looking at/near a question AND 'canConfirm' is 'false', so we done nothing
   bool LogReading(vec position, double bearing, float distanceL, float distanceR, bool canConfirm, Key key, vec *newDest=nullptr);
   
+  // compares a colour and position block reading with the database, adding to or modifying it depending on the comparision
   void ColourAtPos(Colour colour, vec position, Key key);
   
-  void Got(bool iamred, vec position);  
-  void RemoveBlock(Colour colour, unsigned short index);
+  // a robot has retrieved a block, so it can be removed from the database - removes the block from the database if there is one at 'position'
+  void Got(bool iamred, vec position);
+  
+  // Removes a block from the database using the position in the database, 'loc' 
+  void RemoveBlock(Loc loc);
   
   // Looks over database and stores a new destination for the robot, defined by where the position is stored in 'blocks'
   // Priority of blocks in database as new destinations is as follows:
@@ -57,24 +72,17 @@ public:
   
   // Stores the position of the database block of colour 'colour' stored at index 'index' in '*ret'
   // Returns success
-  bool GetBlock(Colour colour, unsigned short index, vec *ret){
-    if(index >= colourNs[colour]) return false;
-    *ret = blocks[colour][index].position;
+  bool GetBlock(Loc loc, vec *ret){
+    if(loc.b >= colourNs[(int)loc.c]) return false;
+    *ret = blocks[(int)loc.c][loc.b].position;
     return true;
   }
   
+  // returns whether 'position' is outside of both the robot staring squares
   bool NotInSquare(vec position){
   	if(position.x < 0.8) return true;
   	if(position.z < -0.8 || position.z > 0.8) return false;
   	return true;
-  }
-  
-  // returns whether the given vector position 'vec' lies within the arena
-  bool WithinArena(vec pos, bool tol){
-    return (pos.x >= -SIDE_HLENGTH - tol*TOLERANCE &&
-            pos.x <=  SIDE_HLENGTH + tol*TOLERANCE &&
-            pos.z >= -SIDE_HLENGTH - tol*TOLERANCE &&
-            pos.z <=  SIDE_HLENGTH + tol*TOLERANCE);
   }
   
   // for debugging
@@ -97,12 +105,12 @@ public:
   // finds and returns index of block with given primary key in database
   // #param: (unsigned short int) pkey, representing primary key in check.
   // #returns: Index of block with given primary key in database (if it is not found, returns -1).
-  int FindByPrimaryKey(unsigned short int pkey);
+  bool FindByPrimaryKey(unsigned short int pkey, Loc *ret);
 
   // verifies database for block with matching coordinates - according to a degree of uncertainty.
   // #param: vec struct pos - position to search against
   // #returns: index of matching block - if block with matching coordinates is not found, returns -1. 
-  int FindByPosition(vec pos);
+  bool FindByPosition(vec pos, Loc *ret);
 
   // modifies block in database with equivalent given block (blocks must have the same primary key)
   // modification does not occur when blocks have the same colour (blockColour) - database does not find such a difference major enough for a change
@@ -113,9 +121,10 @@ public:
   // method always modifies foreign key/ primary keys to match two robots. Complete modification does not occur when blocks have the same colour (blockColour) - database does not find such a difference major enough for a change
   // #param: Pointer to Block type block (struct), Boolean forceChange which forces complete block modification, even if block colours are identical.
   //         integer index relating to the position of the block to be modified within the database. This is a direct positional value obtained by transforming the 2D blocks array into 1D.
-  void ModifyBlockByIndex(Block* block, int index, bool forceChange = false);
-	
-	void RemoveByPosition(vec position);
+  void ModifyBlockByIndex(Block* block, Loc loc, bool forceChange = false);
+  
+  // Removes a block from the database according its position within the arena. If 'isDest' is true, the database will erase destination information about the robot defined by 'isred' if a block is successfully removed (because the robot called this function on it's destination)
+  void RemoveByPosition(vec position, bool isDest=false, bool isred=false);
 	
   // method directly assigns a new block to the database, assigning it to the correct category and generating its primary key
   // #param: Pointer to block struct to be added to the database.
@@ -170,7 +179,7 @@ public:
       return otherPos;
   }
 
-
+  // for debugging
   void printAll(Robot* _robot) {
       for (int i = 0; i < colourNs[question]; i++) {
           Block block = blocks[question][i];
@@ -179,31 +188,35 @@ public:
   }
   
   // ========== comment this out for windows
-  //void Render(SDL_Renderer *renderer);
+  // renders geometry to the visualiser via 'renderer'
+  void Render(SDL_Renderer *renderer);
   
 private:
   // stores all of the information known by the database (at the moment - obviously it will need to remember robot locations as well in future)
-  //			 | this is the index
+  //			             | this is the index
   Block blocks[COLOURS][BLOCKSEACH];
-  //         | this is the colour
+  //              | this is the colour
   unsigned short colourNs[4]; // numbers of blocks stored of each colour
   
+  // stores whether each robot has a destination
   bool robotDest[2];
+   // is this colour probably red?
   vec robotDestPos[2];
+  
+  // checks if a position is the destination of a robot
   bool NotDestOf(bool isred, vec position);
   
   // Communication sensors
   SensorEmitter* em;
   SensorReceiver* rec;
 
-  // Location of this other robot
+  // Location of the robot not associated with this instance of the controller
   vec otherPos;
+  
+  // location of the robot associated with this instance of the controller
   vec myPos;
 
-  // Destination of other robot
-  vec otherDest;
-
-  // Own colour
+  // colour of the robot associated with this instance of the controller
   Colour ownCol;
 
   // Adds a block of unknown colour to the database
@@ -229,20 +242,12 @@ private:
 
   }
   // Removes a question from the database. !!! We currently are not doing anything about robots who have a question as their destination when that question is removed.
-  void RemoveQuestion(unsigned short index){
+  void RemoveQuestion(unsigned int index){
+    if(index >= colourNs[question]){ printf("Tried to remove non-existent question.\n"); return; }
     for(int i=index; i<colourNs[question]-1; i++){
       blocks[question][i] = blocks[question][i+1];
     }
     colourNs[question]--;
-  }
-  
-  // Removes block from database - index from 0 to 127 looking at database as a 1D array
-  void RemoveBlockDirect(unsigned short index) {
-      unsigned short colNum = index / BLOCKSEACH;
-      for (int i = index % BLOCKSEACH; i < colourNs[colNum] - 1; i++) {
-          blocks[colNum][i] = blocks[colNum][i + 1];
-      }
-      colourNs[colNum]--;
   }
   
   // Visualiser stuff

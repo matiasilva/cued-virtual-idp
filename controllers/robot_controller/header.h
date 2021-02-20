@@ -16,7 +16,7 @@
 #include <webots/Receiver.hpp>
 
 // ========== comment this out for windows
-//#include <SDL2/SDL.h>
+#include <SDL2/SDL.h>
 // ==========
 
 #define COLOURS 4
@@ -40,13 +40,11 @@
 // All the webots classes are defined in the "webots" namespace
 using namespace webots;
 
-template <int n> bool CIR(long int i, unsigned int N, const char message[n]);
-
 // ----- Basic mathematical functions (defined in other.cpp) -----
 // converts to degrees and rounds to nearest integer
 int RD(const double angle);
 
-// basically '%', but works on doubles, and makes the value between Pi and -PI, (Plus Pi and Minus Pi)
+// basically '%', but works on doubles, and makes the value between pi and -pi, (Plus Pi and Minus Pi)
 double MakePPMP(const double angle);
 
 // returns the index of the smallest value in the array 'values' of length 'n'
@@ -75,7 +73,7 @@ struct vec {
   friend vec operator+(const vec& vec1, const vec& vec2){ // vector addition
     return {vec1.z+vec2.z, vec1.x+vec2.x};
   }
-  vec operator+=(const vec& vec1){
+  vec operator+=(const vec& vec1){ // vector addition
   	z += vec1.z;
   	x += vec1.x;
   	return *this;
@@ -83,13 +81,13 @@ struct vec {
   friend vec operator-(const vec& vec1, const vec& vec2){ // vector subtraction
     return {vec1.z-vec2.z, vec1.x-vec2.x};
   }
-  friend bool operator==(const vec& vec1, const vec& vec2){
+  friend bool operator==(const vec& vec1, const vec& vec2){ // vector equality
   	return (vec1.z == vec2.z && vec1.x == vec2.x);
   }
-  friend bool operator!=(const vec& vec1, const vec& vec2){
+  friend bool operator!=(const vec& vec1, const vec& vec2){ // vector lack of equality
   	return (vec1.z != vec2.z || vec1.x != vec2.x);
   }
-  double Bearing(bool reversed=false){ // returns bearing of vector measured anti-clockwise from east (+ve z)
+  double Bearing(bool reversed=false){ // returns bearing (between -pi and pi) of the vector measured anti-clockwise from east (+ve z)
     if(x == 0){
       if(z == 0) printf("Warning: bearing of zero vector taken.\n");
       return PI*(z < 0);
@@ -106,26 +104,24 @@ struct vec {
   }
 };
 
+// struct to hold RGB-defined colour
 struct RGB {
 	unsigned char r, g, b;
 	
-	bool Red(){
+	bool Red(){ // is this colour probably red?
 		return (r > 1.4*g && r > 1.4*b);
 	}
-	bool Blue(){
+	bool Blue(){ // is this colour probably blue?
 		return (b > 1.4*g && b > 1.4*r);
 	}
 };
-
-
-vec VecSum(unsigned int n, vec *vectors);
-float LargestDistance(unsigned N, vec *vectors);
 
 // type of blocks stored in data base
 enum Colour{dunno, blue, red, question};
 // dunno:		pretty sure there's a block here, dont know the colour
 // blue:		pretty sure there's a blue block here
 // red:			pretty sure there's a red block here
+// question:	might be a block here, but haven't had a good look yet
 
 // type of control command for sending data
 enum Control{addBlock, removeBlock, robotPos};
@@ -160,12 +156,14 @@ class DCheckingState;
 class InitialScanState;
 class MovingToState;
 class FindingLostState;
+class BackingState;
+class LoweringState;
+class GrabbingState;
+class DroppingState;
+class PickingUpState;
+class FindingCloseState;
 
 // Visualiser
 class Visualiser;
-
-
-// ----- Mathematical functions involving custom data structures -----
-unsigned int FindClosest(int n, vec *positions, vec position);
 
 #endif
